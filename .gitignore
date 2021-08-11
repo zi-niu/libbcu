@@ -1,0 +1,8 @@
+lib/libbcu/msvs/lib/libyaml/x64/*
+lib/libbcu/msvs/libbcu/.vs/*
+lib/libbcu/msvs/libbcu/x64/*
+lib/libbcu/msvs/libbcu/libbcu.vcxproj.user
+msvs/BCU_Terminal/.vs/*
+msvs/BCU_Terminal/x64/*
+msvs/BCU_Terminal/BCU_Terminal.vcxproj.user
+lib/libbcu/src/version.h
