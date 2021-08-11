@@ -56,13 +56,13 @@
     <ClInclude Include="..\..\src\port.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\version.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\yml.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\..\include\libbcu.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\libbcu_version.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

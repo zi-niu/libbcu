@@ -39,7 +39,7 @@
 #endif
 #include "board.h"
 #include "parser.h"
-#include "version.h"
+#include "libbcu_version.h"
 
 enum yaml_now_status_type {
 	STATUS_CHECK_VERSION,

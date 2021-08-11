@@ -5,4 +5,6 @@ lib/libbcu/msvs/libbcu/libbcu.vcxproj.user
 msvs/BCU_Terminal/.vs/*
 msvs/BCU_Terminal/x64/*
 msvs/BCU_Terminal/BCU_Terminal.vcxproj.user
-lib/libbcu/src/version.h
+lib/libbcu/include/libbcu_version.h
+build/*
+.vscode/*

@@ -21,7 +21,7 @@
 #include <math.h>
 
 #include "parser.h"
-#include "version.h"
+#include "libbcu_version.h"
 #include "yml.h"
 #include "eeprom.h"
 

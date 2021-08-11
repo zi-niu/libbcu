@@ -80,7 +80,7 @@ void writeConf(void)
 	char chip_specification[MAX_PATH_LENGTH];
 	int i = 0, j;
 
-	sprintf(text, "config_version: %s                              \n", GIT_VERSION);
+	sprintf(text, "config_version: %s                              \n", LIBBCU_GIT_VERSION);
 	fputs(text, fp);
 	fputs("# show_id can set the display order of the rails.\n# show_id should start from 1.\n# If show_id: 0, it means that this rail will not be displayed and dumped.\n", fp);
 	fputs("#\n# Please DO NOT delete any line of a power rail!\n# If you don't want to show it, please just set its \"show_id\" as 0.\n", fp);
@@ -353,7 +353,7 @@ int readConf(char* boardname)
 				{
 				case STATUS_CHECK_VERSION:
 				{
-					if (compare_version(&GIT_VERSION[4], &tk[4]) != 0)
+					if (compare_version(&LIBBCU_GIT_VERSION[4], &tk[4]) != 0)
 					{
 						printf("\nConfig file version mismatch!\n");
 						int temp = 0;
@@ -361,14 +361,14 @@ int readConf(char* boardname)
 						{
 							if (compare_version(ver_before_big_ver[temp].version, &tk[4]) >= 0)
 							{
-								printf("        BCU version: %s\n", GIT_VERSION);
+								printf("        BCU version: %s\n", LIBBCU_GIT_VERSION);
 								printf("Config file version: %s\n", tk);
 								printf("Config file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
 							}
-							if (compare_version(ver_before_big_ver[temp].version, &GIT_VERSION[4]) >= 0)
+							if (compare_version(ver_before_big_ver[temp].version, &LIBBCU_GIT_VERSION[4]) >= 0)
 							{
-								printf("        BCU version: %s\n", GIT_VERSION);
+								printf("        BCU version: %s\n", LIBBCU_GIT_VERSION);
 								printf("Config file version: %s\n", tk);
 								printf("BCU version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
@@ -376,8 +376,8 @@ int readConf(char* boardname)
 							temp++;
 						}
 						printf("No big change between these two version.\nWill update config file: %s automatically!\n", yamfile);
-						replace_str(yamfile, tk, GIT_VERSION);
-						strcpy(version, GIT_VERSION);
+						replace_str(yamfile, tk, LIBBCU_GIT_VERSION);
+						strcpy(version, LIBBCU_GIT_VERSION);
 					}
 					else
 						strcpy(version, tk);
@@ -446,9 +446,9 @@ int readConf(char* boardname)
 
 	fclose(fh);
 
-	if (strcmp(version, GIT_VERSION))
+	if (strcmp(version, LIBBCU_GIT_VERSION))
 	{
-		if (compare_version(&GIT_VERSION[4], &version[4]) != 0)
+		if (compare_version(&LIBBCU_GIT_VERSION[4], &version[4]) != 0)
 		{
 			printf("\nConfig file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 			return -3;
