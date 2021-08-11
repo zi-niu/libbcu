@@ -29,13 +29,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\libbcu.h" />
+    <ClInclude Include="..\..\include\libbcu_version.h" />
     <ClInclude Include="..\..\src\board.h" />
     <ClInclude Include="..\..\src\chip.h" />
     <ClInclude Include="..\..\src\eeprom.h" />
     <ClInclude Include="..\..\src\ftdi_def.h" />
     <ClInclude Include="..\..\src\parser.h" />
     <ClInclude Include="..\..\src\port.h" />
-    <ClInclude Include="..\..\src\version.h" />
     <ClInclude Include="..\..\src\yml.h" />
   </ItemGroup>
   <ItemGroup>
@@ -166,7 +166,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\..\lib\libyaml\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\lib\libyaml\include;$(SolutionDir)..\..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalOptions>/DYAML_DECLARE_STATIC %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
