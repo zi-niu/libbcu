@@ -1,0 +1,4 @@
+cmake_minimum_required(VERSION 3.4)
+PROJECT(BCU_TOOLS)
+ADD_SUBDIRECTORY(lib/libbcu)
+ADD_SUBDIRECTORY(src)
