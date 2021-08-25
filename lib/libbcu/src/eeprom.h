@@ -32,6 +32,7 @@
 #define BCU_FTDI_EEPROM_H
 
 #include "chip.h"
+#include "mprint.h"
 
 #define BCU_FTDI_EEPROM_UAREA_SADDR (0x1A)
 #define BCU_FTDI_EEPROM_USE_LEN (10)
@@ -79,7 +80,7 @@ struct ftdi_eeprom_data
 
 int bcu_ftdi_eeprom_erase(struct eeprom_device* eeprom);
 int bcu_ftdi_eeprom_read(struct eeprom_device* eeprom, unsigned int read_idx, void* read_buf);
-int bcu_ftdi_eeprom_print(struct eeprom_device* eeprom);
+int bcu_ftdi_eeprom_return_info(struct eeprom_device* eeprom, eeprom_informations *eeprom_info);
 int bcu_ftdi_eeprom_write(struct eeprom_device* eeprom, unsigned int write_idx, void* write_buf);
 int bcu_ftdi_eeprom_write_default(struct eeprom_device* eeprom, struct ftdi_eeprom_user_area* ua_data);
 int bcu_ftdi_eeprom_update_usr_sn(struct eeprom_device* eeprom, unsigned short ua_sn);

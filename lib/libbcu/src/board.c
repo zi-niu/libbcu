@@ -92,7 +92,7 @@ struct mapping imx8xxl[] = {
 	{"ft_reset", gpio, "/ft4232h_gpio{channel=1;pin_bitmask=0x40}", 0x31},
 	{"pmic_stby", gpio, "/ft4232h_gpio{channel=3;pin_bitmask=0x20}", 0x00},
 
-	{"at24cxx", bcu_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0x60;val_bitmask=0x40}/at24cxx{addr=0x57;type=0x0;}", 0x00},
+	{"at24cxx", i2c_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0x60;val_bitmask=0x40}/at24cxx{addr=0x57;type=0x0;}", 0x00},
 	// {"93lcx6", ftdi_eeprom , "/ft4232h_eeprom{uasize=0xFF}", 0x00},
 
 	{NULL, 0, NULL, 0}//null terminated
@@ -146,7 +146,7 @@ struct mapping imx8xxl_board_c1[] = {
 	{"ft_reset",		gpio, "/ft4232h_gpio{channel=1;pin_bitmask=0x40}", 0x31},
 	{"pmic_stby",		gpio, "/ft4232h_gpio{channel=3;pin_bitmask=0x20}", 0x00},
 
-	{"at24cxx",		bcu_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0x60;val_bitmask=0x40}/at24cxx{addr=0x57;type=0x0;}", 0x00},
+	{"at24cxx",		i2c_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0x60;val_bitmask=0x40}/at24cxx{addr=0x57;type=0x0;}", 0x00},
 
 	{NULL, 0, NULL, 0} //null terminated
 };
@@ -266,7 +266,7 @@ struct mapping imx8mpevkpwr_board_a0[] = {
 	{"ft_gpio3",gpio,"/ft4232h_gpio{channel=1;pin_bitmask=0x40}", 0x00},
 	{"ft_gpio4",gpio,"/ft4232h_gpio{channel=1;pin_bitmask=0x80}", 0x00},
 
-	{"at24cxx", bcu_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF0;val_bitmask=0x00}/at24cxx{addr=0x50;type=0x1;}", 0x00},
+	{"at24cxx", i2c_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF0;val_bitmask=0x00}/at24cxx{addr=0x50;type=0x1;}", 0x00},
 
 	{NULL, 0, NULL, 0}//null terminated
 };
@@ -325,7 +325,7 @@ struct mapping imx8mpevkpwr_board_a1[] = {
 	{"ft_gpio3",gpio,"/ft4232h_gpio{channel=1;pin_bitmask=0x40}", 0x00},
 	{"ft_gpio4",gpio,"/ft4232h_gpio{channel=1;pin_bitmask=0x80}", 0x00},
 
-	{"at24cxx", bcu_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF0;val_bitmask=0x00}/at24cxx{addr=0x50;type=0x1;}", 0x00},
+	{"at24cxx", i2c_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF0;val_bitmask=0x00}/at24cxx{addr=0x50;type=0x1;}", 0x00},
 
 	{NULL, 0, NULL, 0}//null terminated
 };
@@ -402,7 +402,7 @@ struct mapping imx8mpddr4_board[] = {
 	{"SR_vdd08_phy_pll_2", gpio, IMX8MPVBD_GPIO_EXTENDER_PATH(0, 0x22, 1, 0x40), 0x00},
 	{"SR_vdd08_phy_pll_1", gpio, IMX8MPVBD_GPIO_EXTENDER_PATH(0, 0x22, 1, 0x80), 0x00},
 
-	// {"at24cxx", bcu_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF0;val_bitmask=0x00}/at24cxx{addr=0x50;}", 0x00},
+	// {"at24cxx", i2c_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF0;val_bitmask=0x00}/at24cxx{addr=0x50;}", 0x00},
 
 	{NULL, 0, NULL, 0}//null terminated
 };
@@ -466,7 +466,7 @@ struct mapping imx8ulpevk_board[] = {
 	{"ft_int_b", gpio, "/ft4232h_gpio{channel=1;pin_bitmask=0x08}", 0x00},
 	{"ft_reset_boot_mode", gpio, "/ft4232h_gpio{channel=1;pin_bitmask=0x10}", 0x00},
 
-	// {"at24cxx", bcu_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF8;val_bitmask=0x00}/at24cxx{addr=0x53;type=0x1;}", 0x00},
+	// {"at24cxx", i2c_eeprom, "/ft4232h_i2c{channel=1;dir_bitmask=0xF8;val_bitmask=0x00}/at24cxx{addr=0x53;type=0x1;}", 0x00},
 	{"93lcx6", ftdi_eeprom, "/ft4232h_eeprom{uasize=0xFF}", 0x00},
 
 	{NULL, 0, NULL, 0} //null terminated
@@ -625,7 +625,7 @@ struct board_info board_list[] =
 };
 int num_of_boards = sizeof(board_list) / sizeof(struct board_info);
 
-int have_gpio(char* gpio_name, struct board_info* board)
+int have_gpio(char* gpio_name, struct board_info *board)
 {
 	int i = 0;
 	while (board->mappings[i].name != NULL)
@@ -639,16 +639,13 @@ int have_gpio(char* gpio_name, struct board_info* board)
 	return -1;
 }
 
-struct board_info* get_board(char* board_name)
+struct board_info *get_board(char* board_name)
 {
-	int findflag = 0;
-	char board_tmp[30] = "";
-
 	if (strlen(board_name) == 0)
 	{
-		printf("\nmissing option <-board=>\n");
-		printf("\nOr use option <-auto> to find the board automatically\n");
-		printf("NOTE: if other boards are also connected to the same host, <-auto> may break its ttyUSB function temporarily.\n\n");
+		mprintf(3, "\nmissing option <--board=>\n");
+		mprintf(3, "\nOr use option <--auto> to find the board automatically\n");
+		mprintf(3, "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n\n");
 		return NULL;
 	}
 
@@ -659,7 +656,15 @@ struct board_info* get_board(char* board_name)
 			return &board_list[i];
 		}
 	}
-	printf("board model %s is not supported", board_name);
+	mprintf(3, "board model %s is not supported\n", board_name);
+
+	return NULL;
+}
+
+void guess_board_name(char* board_name, char boardnamelist[][MAX_MAPPING_NAME_LENGTH])
+{
+	char board_tmp[30] = "";
+	int findflag = 0;
 
 	strcpy(board_tmp, board_name);
 	for (int j = 0; j < strlen(board_name); j++)
@@ -672,20 +677,19 @@ struct board_info* get_board(char* board_name)
 				if (!findflag)
 				{
 					findflag = 1;
-					printf(", do you mean:\n\n\t");
+					mprintf(3, ", do you mean:\n\n\t");
 				}
-				printf("%s ", board_list[i].name);
+				mprintf(3, "%s ", board_list[i].name);
 			}
 		}
 		if (findflag)
 			break;
 	}
-	printf("\n");
-
-	return NULL;
+	mprintf(3, "\n");
 }
 
-struct board_info* get_board_by_id(int id)
+
+struct board_info *get_board_by_id(int id)
 {
 	if (id >= num_of_boards)
 		return NULL;
@@ -698,7 +702,7 @@ int get_board_numer(void)
 	return num_of_boards;
 }
 
-int get_item_location(char* item_name, struct board_info* board)
+int get_item_location(char* item_name, struct board_info *board)
 {
 	int i = 0;
 	while (board->mappings[i].name != NULL)
@@ -709,11 +713,11 @@ int get_item_location(char* item_name, struct board_info* board)
 		}
 		i++;
 	}
-	//printf("path not found\n");
+	//mprintf(3, "path not found\n");
 	return -1;
 }
 
-int get_path(char* path, char* item_name, struct board_info* board)
+int get_path(char* path, char* item_name, struct board_info *board)
 {
 	int i = 0;
 	while (board->mappings[i].name != NULL)
@@ -725,11 +729,11 @@ int get_path(char* path, char* item_name, struct board_info* board)
 		}
 		i++;
 	}
-	//printf("path not found\n");
+	//mprintf(3, "path not found\n");
 	return -1;
 }
 
-int set_path(char* path, char* item_name, struct board_info* board)
+int set_path(char* path, char* item_name, struct board_info *board)
 {
 	int i = 0;
 	while (board->mappings[i].name != NULL)
@@ -742,11 +746,11 @@ int set_path(char* path, char* item_name, struct board_info* board)
 		}
 		i++;
 	}
-	//printf("gpio/power not found\n");
+	//mprintf(3, "gpio/power not found\n");
 	return -1;
 }
 
-int get_gpio_info_by_initid(char* gpio_name, char* path, int initid, struct board_info* board)
+int get_gpio_info_by_initid(char* gpio_name, char* path, int initid, struct board_info *board)
 {
 	int i = 0;
 	while (board->mappings[i].name != NULL)
@@ -763,7 +767,7 @@ int get_gpio_info_by_initid(char* gpio_name, char* path, int initid, struct boar
 	return -1;
 }
 
-int get_power_index_by_showid(int showid, struct board_info* board)
+int get_power_index_by_showid(int showid, struct board_info *board)
 {
 	int i = 0;
 	while (board->mappings[i].name != NULL)
@@ -781,7 +785,7 @@ int get_power_index_by_showid(int showid, struct board_info* board)
 /*
  * get the maximum length of the power related variable name
  */
-int get_max_power_name_length(struct board_info* board)
+int get_max_power_name_length(struct board_info *board)
 {
 	size_t max = 0;
 	int i = 0;
@@ -807,14 +811,14 @@ int get_boot_mode_offset(unsigned char boot_mode_pin_bitmask)
 	}
 	if (offset > 8)
 	{
-		printf("get_boot_mode_offset: something is wrong with the pin bitmask %x\n", boot_mode_pin_bitmask);
+		mprintf(2, "get_boot_mode_offset: something is wrong with the pin bitmask %x\n", boot_mode_pin_bitmask);
 		return -1;
 	}
-	//printf("offset is %d\n", offset);
+	//mprintf(3, "offset is %d\n", offset);
 	return offset;
 }
 
-char* get_boot_mode_name_from_hex(struct board_info* board, int boot_mode_hex)
+char* get_boot_mode_name_from_hex(struct board_info *board, int boot_mode_hex)
 {
 	int i = 0;
 
@@ -829,7 +833,7 @@ char* get_boot_mode_name_from_hex(struct board_info* board, int boot_mode_hex)
 	return NULL;
 }
 
-char* get_boot_config_name_from_hex(struct board_info* board, int *boot_config_hex, int boot_mode_hex)
+char* get_boot_config_name_from_hex(struct board_info *board, int *boot_config_hex, int boot_mode_hex)
 {
 	int i = 0;
 

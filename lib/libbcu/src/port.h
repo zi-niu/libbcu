@@ -35,6 +35,9 @@
 #include <windows.h>
 #endif
 
+#include "mprint.h"
+#include "libbcu.h"
+
 #ifdef _WIN32
 
 typedef struct eeprom_data {
@@ -126,9 +129,7 @@ enum BITMODE
 	BM_SYNCFF = 0x40,
 };
 
-#define MAX_NUMBER_OF_USB_DEVICES 127
-#define MAX_LOCATION_ID_LENGTH 21
-#define MAX_USB_LAYERS 7
+#define MAX_USB_LAYERS			7
 #define LIST_DEVICE_MODE_PRINT		0
 #define LIST_DEVICE_MODE_OUTPUT		1
 

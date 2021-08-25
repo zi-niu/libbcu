@@ -32,17 +32,13 @@
 #define BOARD_H
 
 #include "eeprom.h"
-
-#define MAX_PATH_LENGTH		800	//maximum path length allowed
-#define MAX_NUMBER_OF_POWER	100	//maximum number of power types
-#define MAX_NUMBER_OF_GROUP	10	//maximum number of power groups
-#define MAX_MAPPING_NAME_LENGTH	30	//maximum length of the name of the mapping
-#define MAX_BOOT_CONFIG_BYTE	5
+#include "../include/libbcu.h"
+#include "mprint.h"
 
 enum mapping_type {
 	power,
 	gpio,
-	bcu_eeprom,
+	i2c_eeprom,
 	ftdi_eeprom
 };
 
@@ -92,25 +88,25 @@ struct board_info {
 };
 
 /*find if there is the gpio_name on the board*/
-int have_gpio(char* gpio_name, struct board_info* board);
-struct board_info* get_board_by_id(int id);
+int have_gpio(char* gpio_name, struct board_info *board);
+struct board_info *get_board_by_id(int id);
 int get_board_numer(void);
 /*given the name of the board, return coresponding board info struct*/
-struct board_info* get_board(char* board_name);
+struct board_info *get_board(char* board_name);
 /*given board_info, and the desired variable name, find the coresponding path of the variable*/
-int get_path(char* path, char* item_name, struct board_info* board);
+int get_path(char* path, char* item_name, struct board_info *board);
 /*set path of the item*/
-int set_path(char* path, char* item_name, struct board_info* board);
+int set_path(char* path, char* item_name, struct board_info *board);
 /*get the item location by item_name*/
-int get_item_location(char* item_name, struct board_info* board);
+int get_item_location(char* item_name, struct board_info *board);
 /*given board_info, and the initid, find the coresponding gpio name, path and output state of the variable*/
-int get_gpio_info_by_initid(char* gpio_name, char* path, int initid, struct board_info* board);
-int get_power_index_by_showid(int showid, struct board_info* board);
+int get_gpio_info_by_initid(char* gpio_name, char* path, int initid, struct board_info *board);
+int get_power_index_by_showid(int showid, struct board_info *board);
 /*get the length of the longest power-related variable name*/
-int get_max_power_name_length(struct board_info* board);
+int get_max_power_name_length(struct board_info *board);
 /*convert bitmask to offset of the boot mode, for example, bitmask 0x38 offset is 3, because 00111000>>3=00000111 */
 int get_boot_mode_offset(unsigned char boot_mode_pin_bitmask);
-char* get_boot_mode_name_from_hex(struct board_info* board, int boot_mode_hex);
-char* get_boot_config_name_from_hex(struct board_info* board, int *boot_config_hex, int boot_mode_hex);
+char* get_boot_mode_name_from_hex(struct board_info *board, int boot_mode_hex);
+char* get_boot_config_name_from_hex(struct board_info *board, int *boot_config_hex, int boot_mode_hex);
 
 #endif //BOARD_H

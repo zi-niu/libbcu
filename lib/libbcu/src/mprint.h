@@ -1,5 +1,5 @@
 /*
-* Copyright 2019-2021 NXP.
+* Copyright 2021 NXP.
 *
 * Redistribution and use in source and binary forms, with or without modification,
 * are permitted provided that the following conditions are met:
@@ -28,44 +28,17 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 */
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef MPRINT_H
+#define MPRINT_H
 
-#include "chip.h"
-#include "board.h"
-#include "mprint.h"
+// #define GV_DEBUG_LEVEL 1
+extern int GV_DEBUG_LEVEL;
+#define mprintf(level, args...)			\
+{						\
+	do {					\
+		if (GV_DEBUG_LEVEL >= level)	\
+			printf(args);		\
+	} while (0);				\
+}
 
-#define NO_BOARD_AND_ID	1
-#define NO_BOARD	2
-#define NO_ID		3
-#define NO_USE_AUTO_FIND	4
-
-struct group {
-	char name[MAX_MAPPING_NAME_LENGTH];
-	double sum;
-	double max;
-	double min;
-	double avg;
-	int avg_data_size;
-	int member_index[MAX_NUMBER_OF_POWER];
-	char member_list[MAX_MAPPING_NAME_LENGTH * MAX_NUMBER_OF_POWER];
-	int num_of_members;
-};
-
-int update_parameter_string(char* path, char* parameter_name, char* str);
-int extract_parameter_string(char* chip_specification, char* parameter_name, char* result);
-int extract_parameter_value(char* chip_specification, char* parameter_name);
-int get_chip_specification_by_chipname(char* path, char* chip_specification, char* chipname);
-void get_chip_name(char* chip_specification, char* chip_name);
-void free_device_linkedlist_backward(struct device* ptr);
-void free_device_linkedlist_forward(struct device* ptr);
-void* build_device_linkedlist_forward(void** head, char* path);
-void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_head, char* old_path);
-
-int parse_groups(struct group* groups, struct board_info *board);
-void groups_init(struct group* groups, int num);
-int str_replace(char *str, char *source, char *dest);
-
-int compare_version(const char *v1, const char *v2);
-
-#endif //PARSER_H
+#endif

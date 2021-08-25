@@ -72,7 +72,7 @@ void writeConf(void)
 
 	FILE *fp = fopen(yamfile, "w+");
 	if (fp == NULL) {
-		printf("writeConf: Failed to open config file: %s!\n", yamfile);
+		mprintf(2, "writeConf: Failed to open config file: %s!\n", yamfile);
 		return;
 	}
 
@@ -91,7 +91,7 @@ void writeConf(void)
 
 	for(j = 0; j < get_board_numer(); j++)
 	{
-		struct board_info* board=get_board_by_id(j);
+		struct board_info *board=get_board_by_id(j);
 
 		sprintf(text, "\n\nboardname: %s\n", board->name);
 		fputs(text, fp);
@@ -162,13 +162,13 @@ void writeConf(void)
 	fclose(fp);
 }
 
-int updateRsense(struct board_info* board, char* rail_name, char* rs1, char* rs2)
+int updateRsense(struct board_info *board, char* rail_name, char* rs1, char* rs2)
 {
 	char path[MAX_PATH_LENGTH];
 
 	if (get_path(path, rail_name, board) < 0)
 	{
-		printf("updateRsense: rail path not found!\n");
+		mprintf(2, "updateRsense: rail path not found!\n");
 		return -1;
 	}
 
@@ -177,7 +177,7 @@ int updateRsense(struct board_info* board, char* rail_name, char* rs1, char* rs2
 
 	if (set_path(path, rail_name, board) < 0)
 	{
-		printf("updateRsense: set rail path failed!\n");
+		mprintf(2, "updateRsense: set rail path failed!\n");
 		return -1;
 	}
 	return 0;
@@ -195,7 +195,7 @@ int replace_str(char* path, char* source, char* dest)
 
 	if(fp == NULL)
 	{
-		printf("File open failed\n");
+		mprintf(2, "File open failed\n");
 		return 0;
 	}
 	while (1)
@@ -240,7 +240,7 @@ int replace_str(char* path, char* source, char* dest)
 			}
 		}
 	}
-	printf("File update successfully!\n");
+	mprintf(3, "File update successfully!\n");
 	fclose(fp);
 	return 0;
 }
@@ -252,7 +252,7 @@ int readConf(char* boardname)
 	FILE* fh = fopen(yamfile, "r");
 	if (fh == NULL)
 	{
-		printf("readConf: Failed to open config file: %s!\n", yamfile);
+		mprintf(2, "readConf: Failed to open config file: %s!\n", yamfile);
 		return -1;
 	}
 
@@ -261,7 +261,7 @@ int readConf(char* boardname)
 
 	if (!yaml_parser_initialize(&parser))
 	{
-		printf("Failed to initialize parser!\n");
+		mprintf(2, "Failed to initialize parser!\n");
 		return -2;
 	}
 
@@ -275,7 +275,7 @@ int readConf(char* boardname)
 	char* tk;
 	int i = -1;
 	int now_status = -1;
-	struct board_info* now_board;
+	struct board_info *now_board;
 	char now_rail[MAX_MAPPING_NAME_LENGTH];
 	int group_id = 0;
 	char rs1[10], rs2[10];
@@ -330,11 +330,11 @@ int readConf(char* boardname)
 							now_board->power_groups = (struct board_power_group*)malloc(sizeof(struct board_power_group) * (MAX_NUMBER_OF_GROUP + 1));
 						if (group_id >= MAX_NUMBER_OF_GROUP)
 						{
-							printf("%s: Too much group! Please keep the number of groups NOT greater than %d\n", __func__, MAX_NUMBER_OF_GROUP);
+							mprintf(2, "%s: Too much group! Please keep the number of groups NOT greater than %d\n", __func__, MAX_NUMBER_OF_GROUP);
 							return -2;
 						}
 						now_status = STATUS_CHANGE_GROUPS;
-						// printf("group name: %s\n", tk);
+						// mprintf(4, "group name: %s\n", tk);
 						now_board->power_groups[group_id].group_name = malloc(sizeof(char) * MAX_MAPPING_NAME_LENGTH);
 						strcpy(now_board->power_groups[group_id].group_name, tk);
 						now_board->power_groups[group_id + 1].group_name = NULL;
@@ -342,7 +342,7 @@ int readConf(char* boardname)
 					else
 					{
 						now_status = STATUS_CHANGE_RAIL;
-						// printf("railname: %s\n", tk);
+						// mprintf(4, "railname: %s\n", tk);
 						strcpy(now_rail, tk);
 					}
 				}
@@ -355,27 +355,27 @@ int readConf(char* boardname)
 				{
 					if (compare_version(&LIBBCU_GIT_VERSION[4], &tk[4]) != 0)
 					{
-						printf("\nConfig file version mismatch!\n");
+						mprintf(3, "\nConfig file version mismatch!\n");
 						int temp = 0;
 						while (ver_before_big_ver[temp].version)
 						{
 							if (compare_version(ver_before_big_ver[temp].version, &tk[4]) >= 0)
 							{
-								printf("        BCU version: %s\n", LIBBCU_GIT_VERSION);
-								printf("Config file version: %s\n", tk);
-								printf("Config file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
+								mprintf(3, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
+								mprintf(3, "Config file version: %s\n", tk);
+								mprintf(3, "Config file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
 							}
 							if (compare_version(ver_before_big_ver[temp].version, &LIBBCU_GIT_VERSION[4]) >= 0)
 							{
-								printf("        BCU version: %s\n", LIBBCU_GIT_VERSION);
-								printf("Config file version: %s\n", tk);
-								printf("BCU version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
+								mprintf(3, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
+								mprintf(3, "Config file version: %s\n", tk);
+								mprintf(3, "BCU version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
 							}
 							temp++;
 						}
-						printf("No big change between these two version.\nWill update config file: %s automatically!\n", yamfile);
+						mprintf(3, "No big change between these two version.\nWill update config file: %s automatically!\n", yamfile);
 						replace_str(yamfile, tk, LIBBCU_GIT_VERSION);
 						strcpy(version, LIBBCU_GIT_VERSION);
 					}
@@ -385,7 +385,7 @@ int readConf(char* boardname)
 				case STATUS_WAITING_WANTED_BOARD: break;
 				case STATUS_CHANGE_BOARD:
 				{
-					// printf("boardname: %s\n", tk);
+					// mprintf(4, "boardname: %s\n", tk);
 					if (strcmp(tk, boardname))
 					{
 						now_status = STATUS_WAITING_WANTED_BOARD;
@@ -397,7 +397,7 @@ int readConf(char* boardname)
 				}break;
 				case STATUS_CHANGE_RAIL:
 				{
-					// printf("railname: %s\n", tk);
+					// mprintf(4, "railname: %s\n", tk);
 				}break;
 				case STATUS_CHANGE_FIXEDRAIL:
 				{
@@ -405,18 +405,18 @@ int readConf(char* boardname)
 				}break;
 				case STATUS_CHANGE_RSENSE1:
 				{
-					// printf("rse1: %s\n", tk);
+					// mprintf(4, "rse1: %s\n", tk);
 					strcpy(rs1, tk);
 				}break;
 				case STATUS_CHANGE_RSENSE2:
 				{
-					// printf("rse2: %s\n", tk);
+					// mprintf(4, "rse2: %s\n", tk);
 					strcpy(rs2, tk);
 					updateRsense(now_board, now_rail, rs1, rs2);
 				}break;
 				case STATUS_CHANGE_SHOWID:
 				{
-					// printf("id: %s\n", tk);
+					// mprintf(4, "id: %s\n", tk);
 					int item = get_item_location(now_rail, now_board);
 					if (item < 0)
 						return -2;
@@ -424,7 +424,7 @@ int readConf(char* boardname)
 				}break;
 				case STATUS_CHANGE_GROUPS:
 				{
-					// printf("group string: %s\n", tk);
+					// mprintf(4, "group string: %s\n", tk);
 					now_board->power_groups[group_id].group_string = malloc(sizeof(char) * MAX_MAPPING_NAME_LENGTH * MAX_NUMBER_OF_POWER);
 					strcpy(now_board->power_groups[group_id].group_string, tk);
 				}break;
@@ -450,7 +450,7 @@ int readConf(char* boardname)
 	{
 		if (compare_version(&LIBBCU_GIT_VERSION[4], &version[4]) != 0)
 		{
-			printf("\nConfig file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
+			mprintf(2, "\nConfig file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 			return -3;
 		}
 	}

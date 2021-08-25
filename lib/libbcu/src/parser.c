@@ -56,14 +56,14 @@ int update_parameter_string(char* path, char* parameter_name, char* str)
 	char* ptr = strstr(path, parameter_name);
 	if (ptr == NULL)
 	{
-		printf("could not locate parameter %s\n", parameter_name);
+		mprintf(2, "could not locate parameter %s\n", parameter_name);
 		return -1;
 	}
 	char* equal_sign = strchr(ptr, '=');
 	char* brk = strpbrk(equal_sign, ";}");
 	if (equal_sign == NULL)
 	{
-		printf("can not understand the specification \n");
+		mprintf(2, "can not understand the specification \n");
 		return -1;
 	}
 	strcpy(tpath, brk);
@@ -83,14 +83,14 @@ int extract_parameter_string(char* chip_specification, char* parameter_name, cha
 	if (ptr == NULL)
 	{
 		if(strcmp(parameter_name, "sensor2") != 0)
-			printf("could not locate parameter %s\n", parameter_name);
+			mprintf(2, "could not locate parameter %s\n", parameter_name);
 		return -1;
 	}
 	char* equal_sign = strchr(ptr, '=');
 	char* brk = strpbrk(equal_sign, ";}");
 	if (equal_sign == NULL)
 	{
-		printf("can not understand the specification \n");
+		mprintf(2, "can not understand the specification \n");
 		return -1;
 	}
 	int length = (int)(brk - equal_sign - 1);
@@ -137,7 +137,7 @@ void free_device_linkedlist_backward(struct device* ptr)
 		void* parent = ptr->parent;
 		if (parent == NULL) //if we have reached the end, the the device must be ftdi, so we must close and free the ftdidevice;
 		{
-			//printf("closing and freeing ftdi device\n");
+			//mprintf(3, "closing and freeing ftdi device\n");
 			struct device* ft = delete_this;
 			ft->free(ft);
 			return;
@@ -159,7 +159,7 @@ void free_device_linkedlist_forward(struct device* ptr)
 		void* parent = ptr->parent;
 		if (parent == NULL) //if the device has no parent, then the device must be ftdi, so we must close and free the ftdidevice;
 		{
-			// printf("closing and freeing ftdi device\n");
+			// mprintf(3, "closing and freeing ftdi device\n");
 			struct device* ft = delete_this;
 			ft->free(ft);
 		}
@@ -197,7 +197,7 @@ int get_chip_specification_by_chipname(char* path, char* chip_specification, cha
 
 void* build_device_linkedlist_forward(void** head, char* path)
 {
-	//printf("original path: %s\n", path );
+	//mprintf(3, "original path: %s\n", path );
 
 	char remaining_path[MAX_PATH_LENGTH];
 	char chip_name[MAX_CHIP_SPEC_LENGTH];
@@ -209,11 +209,11 @@ void* build_device_linkedlist_forward(void** head, char* path)
 	if (strlen(path) < MAX_PATH_LENGTH)
 		strcpy(remaining_path, path);
 	else {
-		printf("entered path exceeded maximum length of the buffer\n");
+		mprintf(2, "entered path exceeded maximum length of the buffer\n");
 		return NULL;
 	}
 	char* chip_specification = strtok(remaining_path, "/");
-	//printf("chip_specification: %s\n", chip_specification);
+	//mprintf(3, "chip_specification: %s\n", chip_specification);
 	int found = 0;
 	int is_head = 1;
 	while (chip_specification != NULL)
@@ -228,7 +228,7 @@ void* build_device_linkedlist_forward(void** head, char* path)
 				current = chip_list[i].create_funcptr(chip_specification, previous);
 				if (current == NULL)
 				{
-					printf("failed to create %s data structure\n", chip_name);
+					mprintf(2, "failed to create %s data structure\n", chip_name);
 					return NULL;
 				}
 				if (is_head)
@@ -246,16 +246,16 @@ void* build_device_linkedlist_forward(void** head, char* path)
 		}
 		if (!found)
 		{
-			printf("did not recognize chip '%s'\n", chip_name);
+			mprintf(2, "did not recognize chip '%s'\n", chip_name);
 			free_device_linkedlist_backward(current);
 			return NULL;
 		}
 		chip_specification = strtok(NULL, "/");
-		//printf("chip_specification: %s\n", chip_specification);
+		//mprintf(4, "chip_specification: %s\n", chip_specification);
 	}
 	if (current)
 		current->child = NULL;
-	//printf("finished\n");
+	//mprintf(4, "finished\n");
 	return current;
 }
 
@@ -273,11 +273,11 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 {
 	if (old_head == NULL || old_path == NULL)// first time building
 	{
-		//printf("building device linkedlist completely from scratch\n");
+		//mprintf(4, "building device linkedlist completely from scratch\n");
 		return build_device_linkedlist_forward(new_head, new_path);
 	}
 
-	//printf("attempting to partially rebuild device linked list \n");
+	//mprintf(4, "attempting to partially rebuild device linked list \n");
 	char new_remaining_path[MAX_PATH_LENGTH];
 	char old_remaining_path[MAX_PATH_LENGTH];
 	char chip_name[MAX_CHIP_SPEC_LENGTH];
@@ -333,21 +333,21 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 	*/
 	if (index == 0)//case 0: they are different since the very beginning
 	{
-		//printf("completely different\n");
+		//mprintf(4, "completely different\n");
 		//free all and completely rebuild
 		free_device_linkedlist_forward(old_head);
 		return build_device_linkedlist_forward(new_head, new_path);
 	}
 	else if (new_chip_specifications[index] == NULL && old_chip_specifications[index] == NULL)//case 1: they are identical
 	{
-		//printf("same\n");
+		//mprintf(4, "same\n");
 		//no need to free anything
 		*new_head = old_head;
 		return previous;
 	}
 	else if (new_chip_specifications[index] != NULL && old_chip_specifications[index] != NULL)//case 2: they differ before any of them ends
 	{
-		//printf("different before end!\n");		
+		//mprintf(4, "different before end!\n");		
 		free_device_linkedlist_forward(current);//free everything since the first difference
 		*new_head = old_head;
 		current = NULL;
@@ -356,7 +356,7 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 	}
 	else if (new_chip_specifications[index] == NULL && old_chip_specifications[index] != NULL)//case 3: the new one is a subset of old one
 	{
-		//printf("new shorter\n");		
+		//mprintf(4, "new shorter\n");		
 		free_device_linkedlist_forward(current);//free unwanted extra parts
 		*new_head = old_head;
 		return previous;
@@ -364,7 +364,7 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 	}
 	else if (new_chip_specifications[index] != NULL && old_chip_specifications[index] == NULL)//case 4 the old one is a subset of new one
 	{
-		//printf("old shorter\n");		
+		//mprintf(4, "old shorter\n");		
 		//no need to free anything
 		*new_head = old_head;
 		//need reallocation in next step
@@ -383,7 +383,7 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 				current = chip_list[i].create_funcptr(new_chip_specifications[index], previous);
 				if (current == NULL)
 				{
-					printf("failed to create %s data structure\n", chip_name);
+					mprintf(2, "failed to create %s data structure\n", chip_name);
 					return NULL;
 				}
 				current->child = NULL;
@@ -396,7 +396,7 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 		}
 		if (!found)
 		{
-			printf("did not recognize chip '%s'\n", chip_name);
+			mprintf(2, "did not recognize chip '%s'\n", chip_name);
 			free_device_linkedlist_backward(current);
 			return NULL;
 		}
@@ -405,26 +405,26 @@ void* build_device_linkedlist_smart(void** new_head, char* new_path, void* old_h
 	return current;
 }
 
-static int parse_group(int id, struct group* group_ptr, struct board_info* board)
+static int parse_group(int id, struct group* group_ptr, struct board_info *board)
 {
 	strcpy(group_ptr->name, board->power_groups[id].group_name);
-	printf("group name: %s\n", group_ptr->name);
+	mprintf(3, "group name: %s\n", group_ptr->name);
 
 	group_ptr->num_of_members = 0;
 	if (strlen(board->power_groups[id].group_string) < (MAX_MAPPING_NAME_LENGTH * MAX_NUMBER_OF_POWER))
 		strcpy(group_ptr->member_list, board->power_groups[id].group_string);
 	else
 	{
-		printf("entered group string exceeded maximum buffer size\n");
+		mprintf(2, "entered group string exceeded maximum buffer size\n");
 		return -1;
 	}
 	char group_member_string[MAX_MAPPING_NAME_LENGTH * MAX_NUMBER_OF_POWER];
 	strcpy(group_member_string, group_ptr->member_list);
-	// printf("group string: %s\n", group_member_string);
+	// mprintf(4, "group string: %s\n", group_member_string);
 	char* group_member_name = strtok(group_member_string, ",");
 	while (group_member_name != NULL)
 	{
-		printf("member: %s\n", group_member_name);
+		mprintf(3, "member: %s\n", group_member_name);
 		int power_index = 0;
 		int mapping_index = 0;
 		int found = 0;
@@ -451,7 +451,7 @@ static int parse_group(int id, struct group* group_ptr, struct board_info* board
 	return 0;
 }
 
-int parse_groups(struct group* groups, struct board_info* board)
+int parse_groups(struct group* groups, struct board_info *board)
 {
 	int num_of_groups = 0;
 
@@ -465,7 +465,7 @@ int parse_groups(struct group* groups, struct board_info* board)
 
 	for (int i = 0; i < num_of_groups; i++) {
 		if (parse_group(i, &groups[i], board) == -1) {
-			printf("failed to understand the power groups setting\n");
+			mprintf(2, "failed to understand the power groups setting\n");
 			return -1;
 		}
 	}

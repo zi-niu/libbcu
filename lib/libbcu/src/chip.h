@@ -33,6 +33,7 @@
 #define CHIP_H
 
 #include "port.h"
+#include "mprint.h"
 
 #define MAX_FT_I2C_CHANNEL_NUMBER 4
 

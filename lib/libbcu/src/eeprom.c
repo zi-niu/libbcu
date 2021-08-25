@@ -178,7 +178,7 @@ int bcu_ftdi_eeprom_read(struct eeprom_device* eeprom, unsigned int read_idx, vo
 
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
-		printf("Invalid EEPROM context, use -w option to write the default values.\n");
+		mprintf(2, "Invalid EEPROM context, use -w option to write the default values.\n");
 		return -1;
 	}
 
@@ -238,7 +238,7 @@ int bcu_ftdi_eeprom_read_code(struct eeprom_device* eeprom, unsigned int read_id
 
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
-		printf("Invalid EEPROM context, use -w option to write the default values.\n");
+		mprintf(2, "Invalid EEPROM context, use -w option to write the default values.\n");
 		return -1;
 	}
 
@@ -287,7 +287,7 @@ int bcu_ftdi_eeprom_read_code(struct eeprom_device* eeprom, unsigned int read_id
 	return ret;
 }
 
-int bcu_ftdi_eeprom_print(struct eeprom_device* eeprom)
+int bcu_ftdi_eeprom_return_info(struct eeprom_device* eeprom, eeprom_informations *eeprom_info)
 {
 	struct ftdi_eeprom_data eeprom_data;
 	struct ftdi_eeprom_user_area* eeprom_ua_data = (struct ftdi_eeprom_user_area*)eeprom_data.ua_data;
@@ -299,43 +299,56 @@ int bcu_ftdi_eeprom_print(struct eeprom_device* eeprom)
 		return ret;
 
 	// for (int i = 0; i <10; i++)
-	// 	printf("0x%x ", eeprom_data.ua_data[i]);
-	// printf("\n");
+	// 	mprintf(3, "0x%x ", eeprom_data.ua_data[i]);
+	// mprintf(3, "\n");
 
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
-		printf("Invalid EEPROM context, use -w option to write the default values.\n");
+		mprintf(2, "Invalid EEPROM context, use -w option to write the default values.\n");
 		return -1;
 	}
 
 	if (eeprom->device.parent == NULL)
-		printf("\nFTDI EEPROM SN: %s\n", eeprom_data.ftdi_sn);
-	else
-		printf("\n");
+	{
+		mprintf(3, "\nFTDI EEPROM SN: %s\n", eeprom_data.ftdi_sn);
+		strcpy(eeprom_info->ftdi_sn, eeprom_data.ftdi_sn);
+	} else {
+		mprintf(3, "\n");
+		strcpy(eeprom_info->ftdi_sn, "");
+	}
 
 	rev[0] = 'A' + eeprom_ua_data->board_rev_c - 1;
 	rev[1] = '0' + eeprom_ua_data->board_rev_n - 1;
-	printf("Board Info: %s Rev %s\n", get_code_definition(ftdi_eeprom_board_id, eeprom_ua_data->board_id), rev);
+	mprintf(3, "Board Info: %s Rev %s\n", get_code_definition(ftdi_eeprom_board_id, eeprom_ua_data->board_id), rev);
+	strcpy(eeprom_info->board_id, get_code_definition(ftdi_eeprom_board_id, eeprom_ua_data->board_id));
+	strcpy(eeprom_info->board_rev, rev);
 
 	rev[0] = 'A' + eeprom_ua_data->soc_rev_c - 1;
 	rev[1] = '0' + eeprom_ua_data->soc_rev_n - 1;
-	printf("  SoC Info: %s Rev %s\n", get_code_definition(ftdi_eeprom_soc_id, eeprom_ua_data->soc_id), rev);
+	mprintf(3, "  SoC Info: %s Rev %s\n", get_code_definition(ftdi_eeprom_soc_id, eeprom_ua_data->soc_id), rev);
+	strcpy(eeprom_info->soc_id, get_code_definition(ftdi_eeprom_soc_id, eeprom_ua_data->soc_id));
+	strcpy(eeprom_info->soc_rev, rev);
 
-	printf(" PMIC Info: %s", get_code_definition(ftdi_eeprom_pmic_id, eeprom_ua_data->pmic_id));
+	mprintf(3, " PMIC Info: %s", get_code_definition(ftdi_eeprom_pmic_id, eeprom_ua_data->pmic_id));
+	strcpy(eeprom_info->pmic_id, get_code_definition(ftdi_eeprom_pmic_id, eeprom_ua_data->pmic_id));
 	if (eeprom_ua_data->pmic_rev_c != 0xF && eeprom_ua_data->pmic_rev_n != 0xF)
 	{
 		rev[0] = 'A' + eeprom_ua_data->pmic_rev_c - 1;
 		rev[1] = '0' + eeprom_ua_data->pmic_rev_n - 1;
-		printf(" Rev %s\n", rev);
+		mprintf(3, " Rev %s\n", rev);
+		strcpy(eeprom_info->pmic_rev, rev);
 	}
 	else
 	{
 		rev[0] = 0;
-		printf("\n");
+		mprintf(3, "\n");
+		strcpy(eeprom_info->pmic_rev, "");
 	}
 
-	printf("Number of available power rails: %d\n", eeprom_ua_data->nbr_pwr_rails);
-	printf("Serial Number: %d\n\n", eeprom_ua_data->sn);
+	mprintf(3, "Number of available power rails: %d\n", eeprom_ua_data->nbr_pwr_rails);
+	eeprom_info->rail_number = eeprom_ua_data->nbr_pwr_rails;
+	mprintf(3, "Serial Number: %d\n\n", eeprom_ua_data->sn);
+	eeprom_info->user_sn = eeprom_ua_data->sn;
 
 	return 0;
 }
@@ -374,7 +387,7 @@ int bcu_ftdi_eeprom_write(struct eeprom_device* eeprom, unsigned int write_idx, 
 
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
-		printf("Invalid EEPROM context, use -w option to write the default values.\n");
+		mprintf(2, "Invalid EEPROM context, use -w option to write the default values.\n");
 		return -1;
 	}
 
