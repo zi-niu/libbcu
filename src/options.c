@@ -173,7 +173,7 @@ void set_options_default(struct options_setting *setting)
 	setting->use_rms = 0;
 	setting->rangefixed = 0;
 	setting->use_hwfilter = 0;
-	setting->use_bipolar = 1;
+	setting->use_unipolar = 0;
 	setting->dump_statistics = 0;
 	setting->eeprom_function = 0;
 	setting->download_doc = 0;
@@ -228,22 +228,58 @@ int opt_parser(int argc, char **argv, struct options_setting *setting, char *cmd
 		case 'd':
 		case op_dump:
 			opt = op_dump;
+			setting->dump = 1;
+			if (optarg)
+			{
+				if (!setting->dumpname)
+					free(setting->dumpname);
+
+				if (strlen(optarg) == 0)
+				{
+					setting->dumpname = strdup("monitor_record.csv");
+					break;
+				}
+				setting->dumpname = strdup(optarg);
+				int len1 = strlen(setting->dumpname), len2 = strlen(".csv");
+				if(strcmp(setting->dumpname + len1 - len2, ".csv"))
+				{
+					setting->dumpname = realloc(setting->dumpname, strlen(setting->dumpname) + strlen(".csv") + 1);
+					strcat(setting->dumpname, ".csv");
+				}
+			}
+			else
+				setting->dumpname = strdup("monitor_record.csv");
 			break;
 		case 'n':
 		case op_nodisplay:
 			opt = op_nodisplay;
+			setting->nodisplay = 1;
+			if (!setting->dump)
+			{
+				setting->dump = 1;
+				setting->dumpname = strdup("monitor_record.csv");
+				printf("dump data into %s file\n", setting->dumpname);
+			}
 			break;
 		case op_pmt:
+			setting->pmt = 1;
 			break;
 		case op_stats:
+			setting->dump_statistics = 1;
 			break;
 		case op_rms:
+			setting->use_rms = 1;
 			break;
 		case op_hz:
-			break;
+		{
+			double hz = atof(optarg);
+			setting->refreshms = (int)(1000.0 / hz);
+		}break;
 		case op_hwfilter:
+			setting->use_hwfilter = 1;
 			break;
 		case op_unipolar:
+			setting->use_unipolar = 1;
 			break;
 		case 'w':
 		case op_write:

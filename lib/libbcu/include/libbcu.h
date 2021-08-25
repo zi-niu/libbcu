@@ -84,6 +84,16 @@
 #define LIBBCU_ERR_EEPROM_ERASE			(28)
 #define LIBBCU_ERR_EEPROM_NO_OPT		(29)
 #define LIBBCU_ERR_UNSPPORTED_GPIO		(30)
+#define LIBBCU_ERR_CREATE_MONITOR_THREAD	(31)
+#define LIBBCU_ERR_MUTEX_LOCK_INIT		(32)
+#define LIBBCU_ERR_MOT_OPEN_FILE		(33)
+#define LIBBCU_ERR_MOT_GROUP_PARSE		(34)
+#define LIBBCU_ERR_MOT_PAC1934_CANNOT_ACCESS	(35)
+#define LIBBCU_ERR_MOT_NO_SR			(36)
+#define LIBBCU_ERR_YML_OPEN_FILE		(37)
+#define LIBBCU_ERR_YML_PARSER			(38)
+#define LIBBCU_WARN_YML_OLD			(39)
+#define LIBBCU_ERR_YML_READ			(40)
 
 struct options_setting {
 	int debug;
@@ -109,7 +119,7 @@ struct options_setting {
 	int use_rms;
 	int rangefixed;
 	int use_hwfilter;
-	int use_bipolar;
+	int use_unipolar;
 	int dump_statistics;
 	int eeprom_function;
 	short eeprom_usr_sn;
@@ -148,6 +158,24 @@ typedef struct monitor_power {
 	group_info group_infos[MAX_NUMBER_OF_GROUP];
 } powers;
 
+struct monitor_thread_data
+{
+	int thread_id;
+	int ret;
+	int is_dump;
+	char dumpname[50];
+	int is_pmt;
+	int is_stats;
+	int is_rms;
+	int is_hwfilter;
+	int is_unipolar;
+	int is_stop;
+	char hot_key;
+	powers monitor_powers;
+	pthread_mutex_t mutex;
+	struct options_setting *setting;
+};
+
 typedef struct bcu_eeprom_data
 {
 	char type[10];
@@ -172,7 +200,10 @@ int bcu_onoff(struct options_setting *setting, int delay_us);
 int bcu_init(struct options_setting *setting);
 int bcu_deinit(struct options_setting *setting);
 int bcu_monitor_perpare(struct options_setting *setting);
+int bcu_monitor_set_hotkey(struct options_setting *setting, char hotkey);
 int bcu_monitor_getvalue(struct options_setting *setting, powers *power_info);
+int bcu_monitor_is_stop(void);
+int bcu_monitor_get_err(void);
 int bcu_monitor_unperpare(struct options_setting *setting);
 int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info);
 int bcu_check_gpio_name(struct options_setting *setting);
@@ -182,5 +213,7 @@ int bcu_lsftdi(int is_auto, char boardlist[][MAX_MAPPING_NAME_LENGTH], char loca
 int bcu_lsboard(char boardlist[][MAX_MAPPING_NAME_LENGTH]);
 int bcu_lsbootmode(struct options_setting *setting, char bootmodelist[][MAX_MAPPING_NAME_LENGTH]);
 int bcu_lsgpio(struct options_setting *setting, char gpiolist[][MAX_MAPPING_NAME_LENGTH]);
+int bcu_get_yaml_file_path(char *yamlfilepath);
+int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath);
 
 #endif

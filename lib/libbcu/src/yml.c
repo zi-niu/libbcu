@@ -65,7 +65,7 @@ void get_yaml_file_path(char* path)
 #endif
 }
 
-void writeConf(void)
+int writeConf(void)
 {
 	char yamfile[128] = {0};
 	get_yaml_file_path(yamfile);
@@ -73,7 +73,7 @@ void writeConf(void)
 	FILE *fp = fopen(yamfile, "w+");
 	if (fp == NULL) {
 		mprintf(2, "writeConf: Failed to open config file: %s!\n", yamfile);
-		return;
+		return -LIBBCU_ERR_YML_OPEN_FILE;
 	}
 
 	char text[255];
@@ -160,6 +160,8 @@ void writeConf(void)
 	}
 
 	fclose(fp);
+
+	return 0;
 }
 
 int updateRsense(struct board_info *board, char* rail_name, char* rs1, char* rs2)
@@ -361,16 +363,16 @@ int readConf(char* boardname)
 						{
 							if (compare_version(ver_before_big_ver[temp].version, &tk[4]) >= 0)
 							{
-								mprintf(3, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
-								mprintf(3, "Config file version: %s\n", tk);
-								mprintf(3, "Config file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
+								mprintf(1, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
+								mprintf(1, "Config file version: %s\n", tk);
+								mprintf(1, "Config file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
 							}
 							if (compare_version(ver_before_big_ver[temp].version, &LIBBCU_GIT_VERSION[4]) >= 0)
 							{
-								mprintf(3, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
-								mprintf(3, "Config file version: %s\n", tk);
-								mprintf(3, "BCU version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
+								mprintf(1, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
+								mprintf(1, "Config file version: %s\n", tk);
+								mprintf(1, "BCU version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
 							}
 							temp++;

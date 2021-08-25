@@ -62,7 +62,7 @@ struct bcu_yaml_version
 };
 
 void get_yaml_file_path(char* path);
-void writeConf(void);
+int writeConf(void);
 int readConf(char* boardname);
 
 #endif //BCU_YAML_H

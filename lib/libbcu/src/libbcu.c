@@ -246,6 +246,42 @@ char *bcu_get_err_str(int err_num)
 		       "Please double check the GPIO name with command:\n"
 		       "./bcu lsgpio --board=xxx\n"
 		       "------------end------------------>\n\n";
+	
+	
+	case -LIBBCU_ERR_MUTEX_LOCK_INIT:
+		return "\n<ERROR------cut------------------"
+		       "\nMutex lock init failed!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_ERR_MOT_OPEN_FILE:
+		return "\n<ERROR------cut------------------"
+		       "\nMonitor: Cannot open dump file!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_ERR_MOT_GROUP_PARSE:
+		return "\n<ERROR------cut------------------"
+		       "\nMonitor: Group parse failed!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_ERR_MOT_PAC1934_CANNOT_ACCESS:
+		return "\n<ERROR------cut------------------"
+		       "\nMonitor: PAC1934 cannot access!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_ERR_MOT_NO_SR:
+		return "\n<ERROR------cut------------------"
+		       "\nMonitor: SR name not found!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_ERR_YML_OPEN_FILE:
+		return "\n<ERROR------cut------------------"
+		       "\nYAML: Cannot open yaml file!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_ERR_YML_PARSER:
+		return "\n<ERROR------cut------------------"
+		       "\nYAML: Yaml file parse failed!\n"
+		       "------------end------------------>\n\n";
+	case -LIBBCU_WARN_YML_OLD:
+		return "\n WARNNING: YAML: Yaml file too old!\n\n";
+	case -LIBBCU_ERR_YML_READ:
+		return "\n<ERROR------cut------------------"
+		       "\nYAML: Read yaml file failed!\n"
+		       "------------end------------------>\n\n";
 	default:
 		return "\n<ERROR------cut------------------"
 		       "\nNot handled error!\n"
@@ -1018,42 +1054,846 @@ int bcu_deinit(struct options_setting *setting)
 	return 0;
 }
 
-// #define NUM_THREADS 5
-// pthread_t threads[NUM_THREADS];
+static int get_msecond(unsigned long* current_time)
+{
+#ifdef _WIN32
 
-// struct thread_data{
-// 	int thread_id;
-// 	double message;
-// };
+	SYSTEMTIME time;
+	FILETIME ftime;
+	GetSystemTime(&time);
+	SystemTimeToFileTime(&time, &ftime);
+	*current_time = (ftime.dwLowDateTime + ((UINT64)ftime.dwHighDateTime << 32)) / 10000;
 
-// void *print_hello(void *threadarg)
-// {
-// 	struct thread_data *my_data =  (struct thread_data *) threadarg;
+	return 0;
+#else
+	struct timespec current;
+	clock_gettime(CLOCK_REALTIME, &current);
+	*current_time = current.tv_sec * 1000.00 + current.tv_nsec / 1000000;
+	return 0;
+#endif
+}
 
-// 	printf("Thread ID : %d\n", my_data->thread_id);
-// 	printf("Message : %f\n", my_data->message);
+pthread_t monitor_thread;
+struct monitor_thread_data monitor_td;
 
-// 	pthread_exit(NULL);
-// }
+void *bcu_monitor(void *threadarg)
+{
+	struct monitor_thread_data *m_td =  (struct monitor_thread_data *) threadarg;
+	// printf("Thread ID : %d\n", m_td->thread_id);
+	// printf("Dump : %d\n", m_td->is_dump);
+	// printf("Dump name : %s\n", m_td->dumpname);
+	// printf("HWFilter : %d\n", m_td->is_hwfilter);
+	// printf("PMT : %d\n", m_td->is_pmt);
+	// printf("RMS : %d\n", m_td->is_rms);
+	// printf("STATS : %d\n", m_td->is_stats);
+	// printf("Unipolar : %d\n", m_td->is_unipolar);
+
+	struct board_info* board = get_board(m_td->setting->board);
+	if (board == NULL) {
+		// printf("entered board model are not supported.\n");
+		m_td->ret = -LIBBCU_ERR_NO_THIS_BOARD;
+		m_td->is_stop = 1;
+		return threadarg;
+	}
+	// printf("%s\n", board->mappings[0].path);
+
+
+#if 1
+	char previous_path[MAX_PATH_LENGTH];
+	void* head = NULL;
+	void* end_point = NULL;
+
+	double voltage = 0;
+	double current = 0;
+	double power = 0;
+	char ch = 0;
+	char sr_path[MAX_PATH_LENGTH];
+
+	char sr_name[100];
+	unsigned long start;
+	get_msecond(&start);
+	unsigned long times = 1;
+	FILE* fptr = NULL;
+	int reset_flag = 0;
+
+	if (m_td->is_dump == 1)
+	{
+		fptr = fopen(m_td->dumpname, "w+");
+		if (fptr == NULL)
+		{
+			printf("\nOpen file ERROR!\nPlease check if the \"%s\" file is still opened.\nExit...\n", m_td->dumpname);
+			m_td->ret = -LIBBCU_ERR_MOT_OPEN_FILE;
+			m_td->is_stop = 1;
+			return threadarg;
+		}
+
+		/*print first row*/
+		int i = 1, index_n;
+		fprintf(fptr, "time(ms)");
+		index_n = get_power_index_by_showid(i, board);
+		while (index_n != -1)
+		{
+			if (board->mappings[index_n].type == power && board->mappings[index_n].initinfo != 0)
+			{
+				if (!m_td->is_pmt)
+					fprintf(fptr, ",%s voltage(V),%s current(mA)", board->mappings[index_n].name, board->mappings[index_n].name);
+				else
+					fprintf(fptr, ",%s voltage(V),%s current(mA),%s power(mW)", board->mappings[index_n].name, board->mappings[index_n].name, board->mappings[index_n].name);
+			}
+			i++;
+			index_n = get_power_index_by_showid(i, board);
+		}
+	}
+
+	int n = 0; //n is the number of variables need to be measured
+	int index = 0;
+	while (board->mappings[index].name != NULL)
+	{
+		if (board->mappings[index].type == power)
+			n++;
+		index++;
+	}
+	//ideally I should be able to use n as the size of array, but Visual studio does not allow variable length array declaration...
+	// so 100 maximum variable for now...I could use dynamic memory allocation instead, but then I will have to free it one by one in the end..
+	int name[MAX_NUMBER_OF_POWER];
+	double vnow[MAX_NUMBER_OF_POWER]; double vavg[MAX_NUMBER_OF_POWER]; double vmax[MAX_NUMBER_OF_POWER]; double vmin[MAX_NUMBER_OF_POWER];
+	double cnow[MAX_NUMBER_OF_POWER]; double cavg[MAX_NUMBER_OF_POWER]; double cmax[MAX_NUMBER_OF_POWER]; double cmin[MAX_NUMBER_OF_POWER];
+	double pnow[MAX_NUMBER_OF_POWER]; double pavg[MAX_NUMBER_OF_POWER]; double pmax[MAX_NUMBER_OF_POWER]; double pmin[MAX_NUMBER_OF_POWER];
+	double data_size[MAX_NUMBER_OF_POWER];
+	double cnow_fwrite[MAX_NUMBER_OF_POWER];
+	double pnow_fwrite[MAX_NUMBER_OF_POWER];
+	int sr_level[MAX_NUMBER_OF_POWER];
+	int range_control = 0;
+	int range_level[MAX_NUMBER_OF_POWER] = {0};
+	double cur_range[MAX_NUMBER_OF_POWER];
+	double unused_range[MAX_NUMBER_OF_POWER];
+
+	//initialize
+	for (int i = 0; i < MAX_NUMBER_OF_POWER; i++)
+	{
+		vavg[i] = 0; vmax[i] = 0; vmin[i] = 99999;
+		cavg[i] = 0; cmax[i] = 0; cmin[i] = 99999;
+		pavg[i] = 0; pmax[i] = 0; pmin[i] = 99999;
+		data_size[i] = 0;
+		name[i] = 0;
+	}
+
+	//power groups
+	struct group groups[MAX_NUMBER_OF_POWER];
+	groups_init(groups, MAX_NUMBER_OF_POWER);
+
+	int num_of_groups = parse_groups(groups, board);
+	if (num_of_groups == -1)
+	{
+		free_device_linkedlist_backward(end_point);
+		if (m_td->is_dump == 1)
+			fclose(fptr);
+		m_td->ret = -LIBBCU_ERR_MOT_GROUP_PARSE;
+		m_td->is_stop = 1;
+		return threadarg;
+	}
+
+	if (m_td->is_dump == 1)
+	{
+		for (int i = 0; i < num_of_groups; i++)
+		{
+			fprintf(fptr, ",%s Power(mW)", board->power_groups[i].group_name);
+		}
+		fprintf(fptr, "\n");
+	}
+
+	//get first channels of all groups of rails
+	int a = 0, pac_group_num = 0, last_pac_group = 0, pac_channel_num = 0;
+	struct pac193x_reg_data pac_data[MAX_NUMBER_OF_POWER];
+	char pac193x_group_path[MAX_NUMBER_OF_POWER][MAX_PATH_LENGTH];
+	while (board->mappings[a].name != NULL)
+	{
+		if (board->mappings[a].type == power && board->mappings[a].initinfo != 0) //-------------------------------------------------------------------------
+		{
+			end_point = build_device_linkedlist_smart(&head, board->mappings[a].path, head, previous_path);
+			strcpy(previous_path, board->mappings[a].path);
+
+			if (end_point == NULL) {
+				printf("monitor:failed to build device linkedlist\n");
+				if (m_td->is_dump == 1)
+					fclose(fptr);
+				m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+				m_td->is_stop = 1;
+				return threadarg;
+			}
+			struct power_device* pd = end_point;
+
+			int now_pac_group = pd->power_get_group(pd);
+			if(last_pac_group != now_pac_group)
+			{
+				strcpy(pac193x_group_path[now_pac_group - 1], board->mappings[a].path);
+				pac_group_num++;
+				last_pac_group = now_pac_group;
+			}
+
+			pac_channel_num++;
+
+			strcpy(sr_name, "SR_");
+			strcat(sr_name, board->mappings[a].name);
+			if (get_path(sr_path, sr_name, board) != -1)
+			{
+				end_point = build_device_linkedlist_smart(&head, sr_path, head, previous_path);
+				strcpy(previous_path, sr_path);
+
+				if (end_point == NULL) {
+					printf("monitor:failed to build device linkedlist\n");
+					if (m_td->is_dump == 1)
+						fclose(fptr);
+					m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+					m_td->is_stop = 1;
+					return threadarg;
+				}
+				struct gpio_device* gd = end_point;
+				unsigned char data;
+				gd->gpio_get_output(gd, &data);
+
+				if (data == 0)
+					sr_level[a] = 0;
+				else
+					sr_level[a] = 1;
+			}
+			else
+			{
+				sr_level[a] = -1;
+			}
+		}
+		a++;
+	}
+
+	int pac_group_count = pac_group_num;
+	for(a = 0; a < MAX_NUMBER_OF_POWER; a++)
+	{
+		if (strlen(pac193x_group_path[a]) < 10)
+		{
+			continue;
+		}
+		if (pac_group_count <= 0)
+			break;
+		end_point = build_device_linkedlist_smart(&head, pac193x_group_path[a], head, previous_path);
+		strcpy(previous_path, pac193x_group_path[a]);
+
+		if (end_point == NULL) {
+			printf("monitor:failed to build device linkedlist\n");
+			if (m_td->is_dump == 1)
+				fclose(fptr);
+			m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+			m_td->is_stop = 1;
+			return threadarg;
+		}
+		struct power_device* pd = end_point;
+
+		if (!m_td->is_unipolar)
+			pd->power_write_bipolar(pd, 1);
+		else
+			pd->power_write_bipolar(pd, 0);
+
+		//snapshot once to skip the first data that may not match the polarity configuration
+		pd->power_set_snapshot(pd);
+
+		pac_group_count--;
+	}
+
+	while (!m_td->is_stop)
+	{
+		//first refresh all pac1934's
+		pac_group_count = pac_group_num;
+		for(a = 0; a < MAX_NUMBER_OF_POWER; a++)
+		{
+			if (strlen(pac193x_group_path[a]) < 10)
+			{
+				continue;
+			}
+			if (pac_group_count <= 0)
+				break;
+			end_point = build_device_linkedlist_smart(&head, pac193x_group_path[a], head, previous_path);
+			strcpy(previous_path, pac193x_group_path[a]);
+			if (end_point == NULL) {
+				printf("monitor:failed to build device linkedlist\n");
+				if (m_td->is_dump == 1)
+					fclose(fptr);
+				m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+				m_td->is_stop = 1;
+				return threadarg;
+			}
+			struct power_device* pd = end_point;
+
+			pd->power_set_snapshot(pd);
+			pac_group_count--;
+		}
+		if (pac_group_num < 4)
+			msleep(1);
+
+		int cannotacc = 0;
+		pac_group_count = pac_group_num;
+		for(a = 0; a < MAX_NUMBER_OF_POWER; a++)
+		{
+			if (pac_group_count <= 0)
+				break;
+
+			if (strlen(pac193x_group_path[a]) < 10)
+			{
+				continue;
+			}
+			end_point = build_device_linkedlist_smart(&head, pac193x_group_path[a], head, previous_path);
+			strcpy(previous_path, pac193x_group_path[a]);
+
+			if (end_point == NULL) {
+				printf("monitor:failed to build device linkedlist\n");
+				if (m_td->is_dump == 1)
+					fclose(fptr);
+				m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+				m_td->is_stop = 1;
+				return threadarg;
+			}
+			struct power_device* pd = end_point;
+
+			if (m_td->is_hwfilter)
+				pd->power_set_hwfilter(pd, 1);
+			else
+				pd->power_set_hwfilter(pd, 0);
+
+			if (!m_td->is_unipolar)
+				pd->power_set_bipolar(pd, 1);
+			else
+				pd->power_set_bipolar(pd, 0);
+
+			int b;
+			for (b = 0; b < 50; b++)
+			{
+				if (pd->power_get_data(pd, &pac_data[a]) >= 0)
+				{
+					break;
+				}
+				else
+					cannotacc = 1;
+			}
+			if (b == 50)
+			{
+				printf("PAC1934 cannot access!\n");
+				if (m_td->is_dump == 1)
+					fclose(fptr);
+				m_td->ret = -LIBBCU_ERR_MOT_PAC1934_CANNOT_ACCESS;
+				m_td->is_stop = 1;
+				return threadarg;
+			}
+			else if(cannotacc == 1)
+				break;
+			pac_group_count--;
+		}
+		if(cannotacc == 1)
+			continue;
+
+		//calculate the value and store them in array
+		int i = 0;//i is the index of all mappings
+		int j = 0;//j is the index of the power related mapping only
+		while (board->mappings[i].name != NULL)
+		{
+			if (board->mappings[i].type == power && board->mappings[i].initinfo != 0)
+			{
+				name[j] = i;
+
+				if (reset_flag == 1)
+				{
+					strcpy(sr_name, "SR_");
+					strcat(sr_name, board->mappings[name[j]].name);
+					if (get_path(sr_path, sr_name, board) != -1)
+					{
+						end_point = build_device_linkedlist_smart(&head, sr_path, head, previous_path);
+						strcpy(previous_path, sr_path);
+
+						if (end_point == NULL) {
+							printf("monitor:failed to build device linkedlist\n");
+							if (m_td->is_dump == 1)
+								fclose(fptr);
+							m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+							m_td->is_stop = 1;
+							return threadarg;
+						}
+						struct gpio_device* gd = end_point;
+						unsigned char data;
+						gd->gpio_get_output(gd, &data);
+
+						if (data == 0)
+							sr_level[j] = 0;
+						else
+							sr_level[j] = 1;
+					}
+					else
+					{
+						sr_level[j] = -1;
+					}
+				}
+
+				end_point = build_device_linkedlist_smart(&head, board->mappings[i].path, head, previous_path);
+				strcpy(previous_path, board->mappings[i].path);
+
+				if (end_point == NULL) {
+					printf("monitor:failed to build device linkedlist\n");
+					if (m_td->is_dump == 1)
+						fclose(fptr);
+					m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+					m_td->is_stop = 1;
+					return threadarg;
+				}
+				struct power_device* pd = end_point;
+
+				if(sr_level[j] == 0)
+					pd->switch_sensor(pd, 1);
+				else
+					pd->switch_sensor(pd, 0);
+
+				int group = pd->power_get_group(pd) - 1;
+				int sensor = pd->power_get_sensor(pd) - 1;
+				voltage = pac_data[group].vbus[sensor] - (pac_data[group].vsense[sensor] / 1000000);
+				current = pac_data[group].vsense[sensor] / pd->power_get_cur_res(pd);
+				cnow_fwrite[j] = current;
+				pnow_fwrite[j] = current * voltage;
+
+				if (range_control == 0)
+				{
+					range_level[j] = (char)(0 | range_level[j] << 4);  //mA
+				}
+				else if (range_control == 2)
+				{
+					current *= 1000;
+					range_level[j] = (char)(1 | range_level[j] << 4);  //uA
+				}
+				else
+				{
+					if ( (!(range_level[j] & 0xf) && cavg[j] < 1) || ((range_level[j] & 0xf) && cavg[j] < 1000))
+					{
+						current *= 1000;
+						range_level[j] = (char)(1 | range_level[j] << 4);  //uA
+					}
+					else
+						range_level[j] = (char)(0 | range_level[j] << 4);  //mA
+				}
+
+				cur_range[j] = 100000.0 / pd->power_get_cur_res(pd);
+				unused_range[j] = 100000.0 / pd->power_get_unused_res(pd);
+				// cur_range[j] = pac_data[pd->power_get_group(pd) - 1].vsense[pd->power_get_sensor(pd) - 1];
+
+				// printf("current %f\n", current);
+				double power = current * voltage;
+				vnow[j] = voltage;
+				cnow[j] = current;
+				pnow[j] = power;
+				if (range_level[j] == 0x0 || range_level[j] == 0x11)
+				{
+					vmin[j] = (voltage < vmin[j]) ? voltage : vmin[j];
+					cmin[j] = (current < cmin[j]) ? current : cmin[j];
+					pmin[j] = (power < pmin[j]) ? power : pmin[j];
+					vmax[j] = (voltage > vmax[j]) ? voltage : vmax[j];
+					cmax[j] = (current > cmax[j]) ? current : cmax[j];
+					pmax[j] = (power > pmax[j]) ? power : pmax[j];
+					vavg[j] = (data_size[j] * vavg[j] + voltage) / (double)(data_size[j] + 1);
+					pavg[j] = (data_size[j] * pavg[j] + power) / ((double)(data_size[j] + 1));
+				}
+				else if (range_level[j] == 0x01)
+				{
+					vmin[j] = (voltage < vmin[j]) ? voltage : vmin[j];
+					cmin[j] = (current < cmin[j] * 1000) ? current : cmin[j] * 1000;
+					pmin[j] = (power < pmin[j] * 1000) ? power : pmin[j] * 1000;
+					vmax[j] = (voltage > vmax[j]) ? voltage : vmax[j];
+					cmax[j] = (current > cmax[j] * 1000) ? current : cmax[j] * 1000;
+					pmax[j] = (power > pmax[j] * 1000) ? power : pmax[j] * 1000;
+					cavg[j] *= 1000;
+					vavg[j] = (data_size[j] * vavg[j] + voltage) / (double)(data_size[j] + 1);
+					pavg[j] = (data_size[j] * pavg[j] * 1000 + power) / ((double)(data_size[j] + 1));
+				} 
+				else if (range_level[j] == 0x10)
+				{
+					vmin[j] = (voltage < vmin[j]) ? voltage : vmin[j];
+					cmin[j] = (current < cmin[j] / 1000) ? current : cmin[j] / 1000;
+					pmin[j] = (power < pmin[j] / 1000) ? power : pmin[j] / 1000;
+					vmax[j] = (voltage > vmax[j]) ? voltage : vmax[j];
+					cmax[j] = (current > cmax[j] / 1000) ? current : cmax[j] / 1000;
+					pmax[j] = (power > pmax[j] / 1000) ? power : pmax[j] / 1000;
+					cavg[j] /= 1000;
+					vavg[j] = (data_size[j] * vavg[j] + voltage) / (double)(data_size[j] + 1);
+					pavg[j] = (data_size[j] * pavg[j] / 1000 + power) / ((double)(data_size[j] + 1));
+				}
+
+				if (m_td->is_rms)
+				{
+					cavg[j] = sqrt((data_size[j] * cavg[j] * cavg[j] + current * current) / (double)(data_size[j] + 1));
+					pavg[j] = cavg[j] * vavg[j];
+				}
+				else
+					cavg[j] = (data_size[j] * cavg[j] + current) / (double)(data_size[j] + 1);
+
+				data_size[j] = data_size[j] + 1;
+
+				j++;
+			}
+			else
+				j++;
+			i++;
+		}
+
+		if (reset_flag == 1)
+			reset_flag = 0;
+
+		//get groups data
+		for (int k = 0; k < num_of_groups; k++)
+		{
+			groups[k].sum = 0;
+			for (int x = 0; x < groups[k].num_of_members; x++)
+			{
+				int mi = groups[k].member_index[x];
+				if (range_level[mi] == 0x01 || range_level[mi] == 0x11)
+					pnow[mi] /= 1000;
+				groups[k].sum += pnow[mi];
+			}
+			groups[k].max = (groups[k].sum > groups[k].max) ? groups[k].sum : groups[k].max;
+			groups[k].min = (groups[k].sum < groups[k].min) ? groups[k].sum : groups[k].min;
+			groups[k].avg = (groups[k].avg_data_size * groups[k].avg + groups[k].sum) / (groups[k].avg_data_size + 1);
+			groups[k].avg_data_size++;
+		}
+		//dump data to file
+		if (m_td->is_dump == 1)
+		{
+			unsigned long now;
+			get_msecond(&now);
+			fprintf(fptr, "%ld", (long)now - start);//add time before the first element
+			for (int m = 0; m < n + 1; m++)
+			{
+				int k = get_power_index_by_showid(m, board);
+				if (k < 0)
+					continue;
+				if (board->mappings[k].initinfo != 0)
+				{
+					if (!m_td->is_pmt)
+						fprintf(fptr, ",%lf,%lf", vnow[k], cnow_fwrite[k]);
+					else
+						fprintf(fptr, ",%lf,%lf,%lf", vnow[k], cnow_fwrite[k], pnow_fwrite[k]);
+				}
+			}
+			for (int k = 0; k < num_of_groups; k++)
+			{
+				fprintf(fptr, ",%lf", groups[k].sum);
+			}
+			fprintf(fptr, "\n");
+		}
+
+
+
+		char sendbuf[4096] = { 0 };
+		strcpy(sendbuf, "");
+
+		// char time[32] = {0};
+		// strcat(sendbuf, iso8601(time));
+		// strcat(sendbuf, ";");
+
+		for (int m = 0; m < n + 1; m++)
+		{
+			int k = get_power_index_by_showid(m, board);
+			if (k < 0)
+				continue;
+			if (board->mappings[k].initinfo != 0)
+			{
+				strcat(sendbuf, board->mappings[k].name);
+				strcat(sendbuf, ":");
+				char temp[20] = {0};
+				sprintf(temp, "%lf", pnow[k]);
+				strcat(sendbuf, temp);
+				strcat(sendbuf, ";");
+			}
+		}
+
+		printf("%s\n", sendbuf);
+
+
+		// pthread_mutex_lock(&m_td->mutex);
+		// m_td->is_dump++;
+		// pthread_mutex_unlock(&m_td->mutex);
+		// msleep(10);
+
+
+
+		
+
+		times++;
+
+		//finally,switch the SR
+		ch = m_td->hot_key;
+		pthread_mutex_lock(&m_td->mutex);
+		m_td->hot_key = 0;
+		pthread_mutex_unlock(&m_td->mutex);
+
+		if (isxdigit(ch))
+		{
+			int hotkey_index = (int)ch - '0';
+			int bootmodenum = 0;
+			int input_num = 0;
+			switch (hotkey_index)
+			{
+			case 1:
+				for (int k = 0; k < n; k++)
+				{
+					cavg[k] = 0;
+					vavg[k] = 0;
+					pavg[k] = 0;
+					data_size[k] = 0;
+				}
+				for (int k = 0; k < num_of_groups; k++)
+				{
+					groups[k].avg = 0;
+					groups[k].avg_data_size = 0;
+				}
+				if (m_td->is_dump == 1 && !m_td->is_pmt)
+					fprintf(fptr, "HOT-KEY %d PRESSED: Reset AVG value\n", hotkey_index);
+				break;
+			case 2:
+				for (int k = 0; k < n; k++)
+				{
+					cmin[k] = 99999;
+					vmin[k] = 99999;
+					pmin[k] = 99999;
+					cmax[k] = 0;
+					vmax[k] = 0;
+					pmax[k] = 0;
+				}
+				for (int k = 0; k < num_of_groups; k++)
+				{
+					groups[k].max = 0;
+					groups[k].min = 99999;
+				}
+				if (m_td->is_dump == 1 && !m_td->is_pmt)
+					fprintf(fptr, "HOT-KEY %d PRESSED: Reset MAXMIN value\n", hotkey_index);
+				break;
+			case 3:
+				for (int k = 0; k < n; k++)
+				{
+					cavg[k] = 0;
+					vavg[k] = 0;
+					pavg[k] = 0;
+					data_size[k] = 0;
+					cmin[k] = 99999;
+					vmin[k] = 99999;
+					pmin[k] = 99999;
+					cmax[k] = 0;
+					vmax[k] = 0;
+					pmax[k] = 0;
+				}
+				for (int k = 0; k < num_of_groups; k++)
+				{
+					groups[k].avg = 0;
+					groups[k].avg_data_size = 0;
+					groups[k].max = 0;
+					groups[k].min = 99999;
+				}
+				if (m_td->is_dump == 1 && !m_td->is_pmt)
+					fprintf(fptr, "HOT-KEY %d PRESSED: Reset AVG and MAXMIN value\n", hotkey_index);
+				break;
+			case 4:
+				if (!m_td->is_stats)
+				{
+					range_control++;
+					if (range_control > 2)
+						range_control = 0;
+				}
+				break;
+			default:
+				break;
+			}
+		}
+		if (isalpha(ch))
+		{
+			int sr_index;
+			ch = (int)ch - 64;
+			if (ch < 27)
+				sr_index = get_power_index_by_showid((int)ch, board);//is the ascii code for letter A
+			else
+			{
+				sr_index = get_power_index_by_showid((int)ch - 32 + 26, board);//is the ascii code for letter a
+			}
+			if (sr_index < n && sr_index < MAX_NUMBER_OF_POWER && sr_index >= 0)
+			{
+				strcpy(sr_name, "SR_");
+				if (board->mappings[name[sr_index]].name == NULL)
+				{
+					if (m_td->is_dump == 1)
+						fclose(fptr);
+					m_td->ret = -LIBBCU_ERR_MOT_NO_SR;
+					m_td->is_stop = 1;
+					return threadarg;
+				}
+				strcat(sr_name, board->mappings[name[sr_index]].name);
+
+				if (get_path(sr_path, sr_name, board) != -1)
+				{
+					end_point = build_device_linkedlist_smart(&head, sr_path, head, previous_path);
+					strcpy(previous_path, sr_path);
+					if (end_point == NULL) {
+						printf("monitor:failed to build device linkedlist\n");
+						if (m_td->is_dump == 1)
+						fclose(fptr);
+						m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
+						m_td->is_stop = 1;
+						return threadarg;
+					}
+					struct gpio_device* gd = end_point;
+					unsigned char data;
+					gd->gpio_get_output(gd, &data);
+					if (data == 0)
+						gd->gpio_write(gd, 0xFF);
+					else
+						gd->gpio_write(gd, 0x00);
+
+					msleep(2);
+					reset_flag = 1; //to force refresh sr_level, if some rails share SR_ pin
+				}
+			}
+		}
+	}
+
+	free_device_linkedlist_backward(end_point);
+	if (m_td->is_dump == 1)
+	{
+		if (m_td->is_stop && m_td->is_stats && !m_td->is_pmt)
+		{
+			fprintf(fptr, "AVG%s", m_td->is_rms ? "(RMS for current)" : "");
+			for (int m = 0; m < n + 1; m++)
+			{
+				int k = get_power_index_by_showid(m, board);
+				if (k < 0)
+					continue;
+				if (board->mappings[k].initinfo != 0)
+				{
+					if (!m_td->is_pmt)
+						fprintf(fptr, ",%lf,%lf", vavg[k], cavg[k]);
+					else
+						fprintf(fptr, ",%lf,%lf,%lf", vavg[k], cavg[k], pavg[k]);
+				}
+			}
+			for (int k = 0; k < num_of_groups; k++)
+			{
+				fprintf(fptr, ",%lf", groups[k].avg);
+			}
+			fprintf(fptr, "\n");
+
+			fprintf(fptr, "MAX");
+			for (int m = 0; m < n + 1; m++)
+			{
+				int k = get_power_index_by_showid(m, board);
+				if (k < 0)
+					continue;
+				if (board->mappings[k].initinfo != 0)
+				{
+					if (!m_td->is_pmt)
+						fprintf(fptr, ",%lf,%lf", vmax[k], cmax[k]);
+					else
+						fprintf(fptr, ",%lf,%lf,%lf", vmax[k], cmax[k], pmax[k]);
+				}
+			}
+			for (int k = 0; k < num_of_groups; k++)
+			{
+				fprintf(fptr, ",%lf", groups[k].max);
+			}
+			fprintf(fptr, "\n");
+
+			fprintf(fptr, "MIN");
+			for (int m = 0; m < n + 1; m++)
+			{
+				int k = get_power_index_by_showid(m, board);
+				if (k < 0)
+					continue;
+				if (board->mappings[k].initinfo != 0)
+				{
+					if (!m_td->is_pmt)
+						fprintf(fptr, ",%lf,%lf", vmin[k], cmin[k]);
+					else
+						fprintf(fptr, ",%lf,%lf,%lf", vmin[k], cmin[k], pmin[k]);
+				}
+			}
+			for (int k = 0; k < num_of_groups; k++)
+			{
+				fprintf(fptr, ",%lf", groups[k].min);
+			}
+			fprintf(fptr, "\n");
+		}
+		fclose(fptr);
+	}
+#endif
+
+	pthread_exit(NULL);
+}
 
 int bcu_monitor_perpare(struct options_setting *setting)
 {
-	// struct thread_data td[NUM_THREADS];
-	// for (int i = 0; i < NUM_THREADS; ++i) {
-	// 	printf("main() : creating thread, %d\n", i);
-	// 	td[i].thread_id = i;
-	// 	td[i].message = i;
-	// 	int ret = pthread_create(&threads[i], NULL, print_hello, (void*)&(td[i]));
-	// 	if (ret != 0) {
-	// 		printf("pthread_create error: error_code = %d\n", ret);
-	// 		exit(-1);
-	// 	}
-	// }
+	int ret;
+
+	printf("bcu_monitor_perpare: creating monitor thread\n");
+
+	memset(&monitor_td, 0, sizeof(monitor_td));
+
+	if (pthread_mutex_init(&monitor_td.mutex, NULL))
+		return -LIBBCU_ERR_MUTEX_LOCK_INIT;
+
+	pthread_mutex_lock(&monitor_td.mutex);
+	monitor_td.is_dump = setting->dump;
+	if (setting->dumpname)
+		strcpy(monitor_td.dumpname, setting->dumpname);
+	monitor_td.is_hwfilter = setting->use_hwfilter;
+	monitor_td.is_pmt = setting->pmt;
+	monitor_td.is_rms = setting->use_rms;
+	monitor_td.is_stats = setting->dump_statistics;
+	monitor_td.is_unipolar = setting->use_unipolar;
+	monitor_td.setting = setting;
+	pthread_mutex_unlock(&monitor_td.mutex);
+
+	ret = pthread_create(&monitor_thread, NULL, bcu_monitor, (void *)&monitor_td);
+	if (ret != 0) {
+		printf("pthread_create error: error_code = %d\n", ret);
+		return -LIBBCU_ERR_CREATE_MONITOR_THREAD;
+	}
 
 	return 0;
 }
-// int bcu_monitor_getvalue(struct options_setting *setting, powers *power_info);
-// int bcu_monitor_unperpare(struct options_setting *setting);
+
+int bcu_monitor_set_hotkey(struct options_setting *setting, char hotkey)
+{
+	pthread_mutex_lock(&monitor_td.mutex);
+	monitor_td.hot_key = hotkey;
+	pthread_mutex_unlock(&monitor_td.mutex);
+	while (monitor_td.hot_key != hotkey) {}
+
+	return 0;
+}
+
+int bcu_monitor_getvalue(struct options_setting *setting, powers *power_info)
+{
+	pthread_mutex_lock(&monitor_td.mutex);
+	power_info->rail_infos[0].c_avg = monitor_td.is_dump;
+	pthread_mutex_unlock(&monitor_td.mutex);
+
+	return 0;
+}
+
+int bcu_monitor_is_stop(void)
+{
+	return monitor_td.is_stop;
+}
+
+int bcu_monitor_get_err(void)
+{
+	return monitor_td.ret;
+}
+
+int bcu_monitor_unperpare(struct options_setting *setting)
+{
+	pthread_mutex_destroy(&monitor_td.mutex);
+	monitor_td.is_stop = 1;
+	pthread_join(monitor_thread, NULL);
+
+	return monitor_td.ret;
+}
 
 
 int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info)
@@ -1230,4 +2070,41 @@ int bcu_lsgpio(struct options_setting *setting, char gpiolist[][MAX_MAPPING_NAME
 	}
 
 	return j;
+}
+
+int bcu_get_yaml_file_path(char *yamlfilepath)
+{
+	get_yaml_file_path(yamlfilepath);
+
+	return 0;
+}
+
+int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath)
+{
+	int ret;
+
+	switch (readConf(setting->board))
+	{
+	case 0:
+		break;
+	case -1:
+		printf("Trying to create new config file to %s ...\n", yamlfilepath);
+		ret = writeConf();
+		if (ret < 0)
+			return ret;
+		if (readConf(setting->board) < 0)
+			return -LIBBCU_ERR_YML_READ;
+		break;
+	case -2:
+		printf("config file read error, please check or delete config file: %s and try again.\n", yamlfilepath);
+		return -LIBBCU_ERR_YML_PARSER;
+		break;
+	case -3:
+		return -LIBBCU_WARN_YML_OLD;
+		break;
+	default:
+		break;
+	}
+
+	return 0;
 }

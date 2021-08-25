@@ -31,9 +31,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <unistd.h>
+#include <pthread.h>
+
 #include "options.h"
 #include "libbcu.h"
 #include "libbcu_version.h"
+
+int GV_MONITOR_TERMINATED = 0;
 
 int init(struct options_setting *setting)
 {
@@ -166,9 +172,19 @@ int eeprom(struct options_setting *setting)
 	return 0;
 }
 
+void handle_sigint(int sig)
+{
+	printf("\nTerminating monitor command: %d\n", sig);
+	GV_MONITOR_TERMINATED = 1;
+}
+
 int monitor(struct options_setting *setting)
 {
+	signal(SIGINT, handle_sigint);
 	int ret;
+	powers power_val;
+
+	memset(&power_val, 0, sizeof(power_val));
 
 	ret = bcu_monitor_perpare(setting);
 	if (ret < 0)
@@ -176,6 +192,23 @@ int monitor(struct options_setting *setting)
 		printf("%s", bcu_get_err_str(ret));
 		return ret;
 	}
+
+	while(!GV_MONITOR_TERMINATED && !(bcu_monitor_is_stop())){
+		ret = bcu_monitor_getvalue(setting, &power_val);
+		if (ret)
+			printf("%s", bcu_get_err_str(ret));
+		// printf("val: %f\n", power_val.rail_infos[0].c_avg);
+		usleep(10000);
+	}
+
+	ret = bcu_monitor_unperpare(setting);
+	if (ret < 0)
+	{
+		printf("%s", bcu_get_err_str(ret));
+		return ret;
+	}
+
+	return 0;
 }
 
 int lsftdi(struct options_setting *setting)
@@ -282,6 +315,37 @@ int main(int argc, char **argv)
 	char* cmd = argv[1];
 	struct options_setting setting;
 	int ret;
+
+	char yamfile[128] = {0};
+	bcu_get_yaml_file_path(yamfile);
+	ret = bcu_get_yaml_file(&setting, yamfile);
+	if (ret < 0)
+	{
+		printf("%s", bcu_get_err_str(ret));
+		return ret;
+	}
+
+
+
+	switch (argc)
+	{
+	case 1:
+		// print_help(NULL);
+		return 0;
+	case 2: 
+		if (strcmp(argv[1], "conf_path") == 0 || strcmp(argv[1], "-cp") == 0)
+		{
+			printf("\nBCU Config file path: %s\n\n", yamfile);
+			return 0;
+		}
+		break;
+	default:
+		break;
+	}
+
+
+
+
 
 	ret = opt_parser(argc, argv, &setting, cmd);
 	if (ret)
