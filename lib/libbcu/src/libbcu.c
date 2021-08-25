@@ -1079,24 +1079,22 @@ struct monitor_thread_data monitor_td;
 void *bcu_monitor(void *threadarg)
 {
 	struct monitor_thread_data *m_td =  (struct monitor_thread_data *) threadarg;
-	// printf("Thread ID : %d\n", m_td->thread_id);
-	// printf("Dump : %d\n", m_td->is_dump);
-	// printf("Dump name : %s\n", m_td->dumpname);
-	// printf("HWFilter : %d\n", m_td->is_hwfilter);
-	// printf("PMT : %d\n", m_td->is_pmt);
-	// printf("RMS : %d\n", m_td->is_rms);
-	// printf("STATS : %d\n", m_td->is_stats);
-	// printf("Unipolar : %d\n", m_td->is_unipolar);
+	// mprintf(4, "Thread ID : %d\n", m_td->thread_id);
+	// mprintf(4, "Dump : %d\n", m_td->is_dump);
+	// mprintf(4, "Dump name : %s\n", m_td->dumpname);
+	// mprintf(4, "HWFilter : %d\n", m_td->is_hwfilter);
+	// mprintf(4, "PMT : %d\n", m_td->is_pmt);
+	// mprintf(4, "RMS : %d\n", m_td->is_rms);
+	// mprintf(4, "STATS : %d\n", m_td->is_stats);
+	// mprintf(4, "Unipolar : %d\n", m_td->is_unipolar);
 
 	struct board_info* board = get_board(m_td->setting->board);
 	if (board == NULL) {
-		// printf("entered board model are not supported.\n");
+		// mprintf(2, "entered board model are not supported.\n");
 		m_td->ret = -LIBBCU_ERR_NO_THIS_BOARD;
 		m_td->is_stop = 1;
 		return threadarg;
 	}
-	// printf("%s\n", board->mappings[0].path);
-
 
 #if 1
 	char previous_path[MAX_PATH_LENGTH];
@@ -1121,7 +1119,7 @@ void *bcu_monitor(void *threadarg)
 		fptr = fopen(m_td->dumpname, "w+");
 		if (fptr == NULL)
 		{
-			printf("\nOpen file ERROR!\nPlease check if the \"%s\" file is still opened.\nExit...\n", m_td->dumpname);
+			mprintf(2, "\nOpen file ERROR!\nPlease check if the \"%s\" file is still opened.\nExit...\n", m_td->dumpname);
 			m_td->ret = -LIBBCU_ERR_MOT_OPEN_FILE;
 			m_td->is_stop = 1;
 			return threadarg;
@@ -1214,7 +1212,7 @@ void *bcu_monitor(void *threadarg)
 			strcpy(previous_path, board->mappings[a].path);
 
 			if (end_point == NULL) {
-				printf("monitor:failed to build device linkedlist\n");
+				mprintf(2, "monitor:failed to build device linkedlist\n");
 				if (m_td->is_dump == 1)
 					fclose(fptr);
 				m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1241,7 +1239,7 @@ void *bcu_monitor(void *threadarg)
 				strcpy(previous_path, sr_path);
 
 				if (end_point == NULL) {
-					printf("monitor:failed to build device linkedlist\n");
+					mprintf(2, "monitor:failed to build device linkedlist\n");
 					if (m_td->is_dump == 1)
 						fclose(fptr);
 					m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1278,7 +1276,7 @@ void *bcu_monitor(void *threadarg)
 		strcpy(previous_path, pac193x_group_path[a]);
 
 		if (end_point == NULL) {
-			printf("monitor:failed to build device linkedlist\n");
+			mprintf(2, "monitor:failed to build device linkedlist\n");
 			if (m_td->is_dump == 1)
 				fclose(fptr);
 			m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1313,7 +1311,7 @@ void *bcu_monitor(void *threadarg)
 			end_point = build_device_linkedlist_smart(&head, pac193x_group_path[a], head, previous_path);
 			strcpy(previous_path, pac193x_group_path[a]);
 			if (end_point == NULL) {
-				printf("monitor:failed to build device linkedlist\n");
+				mprintf(2, "monitor:failed to build device linkedlist\n");
 				if (m_td->is_dump == 1)
 					fclose(fptr);
 				m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1343,7 +1341,7 @@ void *bcu_monitor(void *threadarg)
 			strcpy(previous_path, pac193x_group_path[a]);
 
 			if (end_point == NULL) {
-				printf("monitor:failed to build device linkedlist\n");
+				mprintf(2, "monitor:failed to build device linkedlist\n");
 				if (m_td->is_dump == 1)
 					fclose(fptr);
 				m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1374,7 +1372,7 @@ void *bcu_monitor(void *threadarg)
 			}
 			if (b == 50)
 			{
-				printf("PAC1934 cannot access!\n");
+				mprintf(2, "PAC1934 cannot access!\n");
 				if (m_td->is_dump == 1)
 					fclose(fptr);
 				m_td->ret = -LIBBCU_ERR_MOT_PAC1934_CANNOT_ACCESS;
@@ -1407,7 +1405,7 @@ void *bcu_monitor(void *threadarg)
 						strcpy(previous_path, sr_path);
 
 						if (end_point == NULL) {
-							printf("monitor:failed to build device linkedlist\n");
+							mprintf(2, "monitor:failed to build device linkedlist\n");
 							if (m_td->is_dump == 1)
 								fclose(fptr);
 							m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1433,7 +1431,7 @@ void *bcu_monitor(void *threadarg)
 				strcpy(previous_path, board->mappings[i].path);
 
 				if (end_point == NULL) {
-					printf("monitor:failed to build device linkedlist\n");
+					mprintf(2, "monitor:failed to build device linkedlist\n");
 					if (m_td->is_dump == 1)
 						fclose(fptr);
 					m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1478,7 +1476,7 @@ void *bcu_monitor(void *threadarg)
 				unused_range[j] = 100000.0 / pd->power_get_unused_res(pd);
 				// cur_range[j] = pac_data[pd->power_get_group(pd) - 1].vsense[pd->power_get_sensor(pd) - 1];
 
-				// printf("current %f\n", current);
+				// mprintf(4, "current %f\n", current);
 				double power = current * voltage;
 				vnow[j] = voltage;
 				cnow[j] = current;
@@ -1581,15 +1579,11 @@ void *bcu_monitor(void *threadarg)
 			fprintf(fptr, "\n");
 		}
 
+		pthread_mutex_lock(&m_td->mutex);
 
+		memset(&m_td->monitor_powers, 0, sizeof(m_td->monitor_powers));
 
-		char sendbuf[4096] = { 0 };
-		strcpy(sendbuf, "");
-
-		// char time[32] = {0};
-		// strcat(sendbuf, iso8601(time));
-		// strcat(sendbuf, ";");
-
+		int rail_number = 0;
 		for (int m = 0; m < n + 1; m++)
 		{
 			int k = get_power_index_by_showid(m, board);
@@ -1597,17 +1591,36 @@ void *bcu_monitor(void *threadarg)
 				continue;
 			if (board->mappings[k].initinfo != 0)
 			{
-				strcat(sendbuf, board->mappings[k].name);
-				strcat(sendbuf, ":");
-				char temp[20] = {0};
-				sprintf(temp, "%lf", pnow[k]);
-				strcat(sendbuf, temp);
-				strcat(sendbuf, ";");
+				strcat(m_td->monitor_powers.rail_infos[rail_number].rail_name, board->mappings[k].name);
+				m_td->monitor_powers.rail_infos[rail_number].v_now = vnow[k];
+				m_td->monitor_powers.rail_infos[rail_number].v_avg = vavg[k];
+				m_td->monitor_powers.rail_infos[rail_number].v_min = vmin[k];
+				m_td->monitor_powers.rail_infos[rail_number].v_max = vmax[k];
+				m_td->monitor_powers.rail_infos[rail_number].c_now = cnow[k];
+				m_td->monitor_powers.rail_infos[rail_number].c_avg = cavg[k];
+				m_td->monitor_powers.rail_infos[rail_number].c_min = cmin[k];
+				m_td->monitor_powers.rail_infos[rail_number].c_max = cmax[k];
+				m_td->monitor_powers.rail_infos[rail_number].p_now = pnow[k];
+				m_td->monitor_powers.rail_infos[rail_number].p_avg = pavg[k];
+				m_td->monitor_powers.rail_infos[rail_number].p_min = pmin[k];
+				m_td->monitor_powers.rail_infos[rail_number].p_max = pmax[k];
+				rail_number++;
 			}
 		}
-
-		printf("%s\n", sendbuf);
-
+		m_td->monitor_powers.rail_num = rail_number;
+		if (num_of_groups > 0)
+		{
+			for (int k = 0; k < num_of_groups; k++)
+			{
+				strcat(m_td->monitor_powers.group_infos[k].group_name, groups[k].name);
+				m_td->monitor_powers.group_infos[k].p_now = groups[k].sum;
+				m_td->monitor_powers.group_infos[k].p_avg = groups[k].avg;
+				m_td->monitor_powers.group_infos[k].p_min = groups[k].min;
+				m_td->monitor_powers.group_infos[k].p_max = groups[k].max;
+			}
+			m_td->monitor_powers.group_num = num_of_groups;
+		}
+		pthread_mutex_unlock(&m_td->mutex);
 
 		// pthread_mutex_lock(&m_td->mutex);
 		// m_td->is_dump++;
@@ -1731,7 +1744,7 @@ void *bcu_monitor(void *threadarg)
 					end_point = build_device_linkedlist_smart(&head, sr_path, head, previous_path);
 					strcpy(previous_path, sr_path);
 					if (end_point == NULL) {
-						printf("monitor:failed to build device linkedlist\n");
+						mprintf(2, "monitor:failed to build device linkedlist\n");
 						if (m_td->is_dump == 1)
 						fclose(fptr);
 						m_td->ret = -LIBBCU_ERR_BUILD_DEVICE_LINK;
@@ -1829,7 +1842,7 @@ int bcu_monitor_perpare(struct options_setting *setting)
 {
 	int ret;
 
-	printf("bcu_monitor_perpare: creating monitor thread\n");
+	mprintf(3, "bcu_monitor_perpare: creating monitor thread\n");
 
 	memset(&monitor_td, 0, sizeof(monitor_td));
 
@@ -1850,7 +1863,7 @@ int bcu_monitor_perpare(struct options_setting *setting)
 
 	ret = pthread_create(&monitor_thread, NULL, bcu_monitor, (void *)&monitor_td);
 	if (ret != 0) {
-		printf("pthread_create error: error_code = %d\n", ret);
+		mprintf(2, "pthread_create error: error_code = %d\n", ret);
 		return -LIBBCU_ERR_CREATE_MONITOR_THREAD;
 	}
 
@@ -1870,7 +1883,7 @@ int bcu_monitor_set_hotkey(struct options_setting *setting, char hotkey)
 int bcu_monitor_getvalue(struct options_setting *setting, powers *power_info)
 {
 	pthread_mutex_lock(&monitor_td.mutex);
-	power_info->rail_infos[0].c_avg = monitor_td.is_dump;
+	memcpy(power_info, &monitor_td.monitor_powers, sizeof(powers));
 	pthread_mutex_unlock(&monitor_td.mutex);
 
 	return 0;
@@ -1893,6 +1906,11 @@ int bcu_monitor_unperpare(struct options_setting *setting)
 	pthread_join(monitor_thread, NULL);
 
 	return monitor_td.ret;
+}
+
+void bcu_remove_all_ftdi_port(void)
+{
+	ft4232h_i2c_remove_all();
 }
 
 
@@ -2088,7 +2106,7 @@ int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath)
 	case 0:
 		break;
 	case -1:
-		printf("Trying to create new config file to %s ...\n", yamlfilepath);
+		mprintf(2, "Trying to create new config file to %s ...\n", yamlfilepath);
 		ret = writeConf();
 		if (ret < 0)
 			return ret;
@@ -2096,7 +2114,7 @@ int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath)
 			return -LIBBCU_ERR_YML_READ;
 		break;
 	case -2:
-		printf("config file read error, please check or delete config file: %s and try again.\n", yamlfilepath);
+		mprintf(2, "config file read error, please check or delete config file: %s and try again.\n", yamlfilepath);
 		return -LIBBCU_ERR_YML_PARSER;
 		break;
 	case -3:

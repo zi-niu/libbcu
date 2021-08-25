@@ -156,6 +156,8 @@ typedef struct monitor_group_power {
 typedef struct monitor_power {
 	rail_info rail_infos[MAX_NUMBER_OF_POWER];
 	group_info group_infos[MAX_NUMBER_OF_GROUP];
+	int rail_num;
+	int group_num;
 } powers;
 
 struct monitor_thread_data
@@ -215,5 +217,6 @@ int bcu_lsbootmode(struct options_setting *setting, char bootmodelist[][MAX_MAPP
 int bcu_lsgpio(struct options_setting *setting, char gpiolist[][MAX_MAPPING_NAME_LENGTH]);
 int bcu_get_yaml_file_path(char *yamlfilepath);
 int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath);
+void bcu_remove_all_ftdi_port(void);
 
 #endif

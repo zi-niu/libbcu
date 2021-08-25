@@ -178,6 +178,12 @@ void handle_sigint(int sig)
 	GV_MONITOR_TERMINATED = 1;
 }
 
+char* g_vt_clear = (char*)"\x1B[2J";
+char* g_vt_clear_remain = (char*)"\x1B[0J";
+char* g_vt_clear_line = (char*)"\x1B[K";
+char* g_vt_return_last_line = (char*)"\x1B[1A";
+char* g_vt_home = (char*)"\x1B[H";
+
 int monitor(struct options_setting *setting)
 {
 	signal(SIGINT, handle_sigint);
@@ -198,7 +204,50 @@ int monitor(struct options_setting *setting)
 		if (ret)
 			printf("%s", bcu_get_err_str(ret));
 		// printf("val: %f\n", power_val.rail_infos[0].c_avg);
-		usleep(10000);
+		printf("%s", g_vt_home);
+		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
+		printf("%-30s | %6s%6s%6s%6s | %10s%10s%10s%10s | %10s%10s%10s%10s%s\n", "Rail Name",
+		       "now", "avg", "max", "min",
+		       "now", "avg", "max", "min",
+		       "now", "avg", "max", "min", g_vt_clear_remain);
+		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
+		for (int i = 0; i < power_val.rail_num; i++)
+		{
+			printf("%-30s | ", power_val.rail_infos[i].rail_name);
+			printf("%6.2f", power_val.rail_infos[i].v_now);
+			printf("%6.2f", power_val.rail_infos[i].v_avg);
+			printf("%6.2f", power_val.rail_infos[i].v_max);
+			printf("%6.2f", power_val.rail_infos[i].v_min);
+			printf(" | ");
+			printf("%10.2f", power_val.rail_infos[i].c_now);
+			printf("%10.2f", power_val.rail_infos[i].c_avg);
+			printf("%10.2f", power_val.rail_infos[i].c_max);
+			printf("%10.2f", power_val.rail_infos[i].c_min);
+			printf(" | ");
+			printf("%10.2f", power_val.rail_infos[i].p_now);
+			printf("%10.2f", power_val.rail_infos[i].p_avg);
+			printf("%10.2f", power_val.rail_infos[i].p_max);
+			printf("%10.2f", power_val.rail_infos[i].p_min);
+			printf("%s\n", g_vt_clear_line);
+		}
+		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
+		printf("%-30s | %10s%10s%10s%10s%s\n", "Group Name",
+		       "now", "avg", "max", "min", g_vt_clear_remain);
+		for (int i = 0; i < power_val.group_num; i++)
+		{
+			printf("%-30s | ", power_val.group_infos[i].group_name);
+			printf("%10.2f", power_val.group_infos[i].p_now);
+			printf("%10.2f", power_val.group_infos[i].p_avg);
+			printf("%10.2f", power_val.group_infos[i].p_max);
+			printf("%10.2f", power_val.group_infos[i].p_min);
+			printf("%s\n", g_vt_clear_line);
+		}
+		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
+
+
+		printf("%s", g_vt_clear_remain);
+
+		usleep(1000 * setting->refreshms);
 	}
 
 	ret = bcu_monitor_unperpare(setting);
@@ -307,6 +356,11 @@ int lsbootmode(struct options_setting *setting)
 	return bootmodenum;
 }
 
+void terminateBCU(void)
+{
+	bcu_remove_all_ftdi_port();
+}
+
 int main(int argc, char **argv)
 {
 	// if (auto_complete(argc, argv) == 0)
@@ -315,17 +369,10 @@ int main(int argc, char **argv)
 	char* cmd = argv[1];
 	struct options_setting setting;
 	int ret;
-
 	char yamfile[128] = {0};
 	bcu_get_yaml_file_path(yamfile);
-	ret = bcu_get_yaml_file(&setting, yamfile);
-	if (ret < 0)
-	{
-		printf("%s", bcu_get_err_str(ret));
-		return ret;
-	}
 
-
+	atexit(terminateBCU);
 
 	switch (argc)
 	{
@@ -343,13 +390,16 @@ int main(int argc, char **argv)
 		break;
 	}
 
-
-
-
-
 	ret = opt_parser(argc, argv, &setting, cmd);
 	if (ret)
 		return ret;
+
+	ret = bcu_get_yaml_file(&setting, yamfile);
+	if (ret < 0)
+	{
+		printf("%s", bcu_get_err_str(ret));
+		return ret;
+	}
 
 	bcu_update_debug_level(setting.debug);
 	if (strlen(setting.location_id_string))

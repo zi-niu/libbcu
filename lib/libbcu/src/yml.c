@@ -185,7 +185,7 @@ int updateRsense(struct board_info *board, char* rail_name, char* rs1, char* rs2
 	return 0;
 }
 
-#define FILE_MAX_LENGTH 4096
+#define FILE_MAX_LENGTH 40960
 int replace_str(char* path, char* source, char* dest)
 {
 	char buffer[FILE_MAX_LENGTH];
@@ -294,6 +294,8 @@ int readConf(char* boardname)
 		case YAML_SCALAR_TOKEN:
 			tk = token.data.scalar.value;
 
+			// mprintf(4, "tk:%s, state:%d, now_status:%d\n", tk, state, now_status);
+
 			if (state == 0)
 			{
 				if (!strcmp(tk, "config_version"))
@@ -355,20 +357,20 @@ int readConf(char* boardname)
 				{
 				case STATUS_CHECK_VERSION:
 				{
-					if (compare_version(&LIBBCU_GIT_VERSION[4], &tk[4]) != 0)
+					if (compare_version(&LIBBCU_GIT_VERSION[7], &tk[7]) != 0)
 					{
 						mprintf(3, "\nConfig file version mismatch!\n");
 						int temp = 0;
 						while (ver_before_big_ver[temp].version)
 						{
-							if (compare_version(ver_before_big_ver[temp].version, &tk[4]) >= 0)
+							if (compare_version(ver_before_big_ver[temp].version, &tk[7]) >= 0)
 							{
 								mprintf(1, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
 								mprintf(1, "Config file version: %s\n", tk);
 								mprintf(1, "Config file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 								return -3;
 							}
-							if (compare_version(ver_before_big_ver[temp].version, &LIBBCU_GIT_VERSION[4]) >= 0)
+							if (compare_version(ver_before_big_ver[temp].version, &LIBBCU_GIT_VERSION[7]) >= 0)
 							{
 								mprintf(1, "        BCU version: %s\n", LIBBCU_GIT_VERSION);
 								mprintf(1, "Config file version: %s\n", tk);
@@ -387,7 +389,7 @@ int readConf(char* boardname)
 				case STATUS_WAITING_WANTED_BOARD: break;
 				case STATUS_CHANGE_BOARD:
 				{
-					// mprintf(4, "boardname: %s\n", tk);
+					// mprintf(4, "boardname: %s, tk: %s\n", boardname, tk);
 					if (strcmp(tk, boardname))
 					{
 						now_status = STATUS_WAITING_WANTED_BOARD;
@@ -450,7 +452,7 @@ int readConf(char* boardname)
 
 	if (strcmp(version, LIBBCU_GIT_VERSION))
 	{
-		if (compare_version(&LIBBCU_GIT_VERSION[4], &version[4]) != 0)
+		if (compare_version(&LIBBCU_GIT_VERSION[7], &version[7]) != 0)
 		{
 			mprintf(2, "\nConfig file version is too old!\nPlease delete the old config file: %s, then run BCU again!\n", yamfile);
 			return -3;
