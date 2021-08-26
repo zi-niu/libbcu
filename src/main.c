@@ -236,7 +236,7 @@ char* g_vt_home = (char*)"\x1B[H";
 #define LAST_LINE 2
 #define TABLE_RAIL 1
 #define TABLE_GROUP 2
-#define PRINTF_MIDDLE(STR, LEN) printf("%*s%*s", (LEN + (int)strlen(STR) / 2), STR, (LEN - (int)strlen(STR) / 2), "")
+#define PRINTF_MIDDLE(TEMP, STR, LEN) sprintf(TEMP, "%*s%*s", (LEN + (int)strlen(STR) / 2), STR, (LEN - (int)strlen(STR) / 2), "")
 int LEN_RAIL_NAME = 25;
 int LEN_RAIL_V =  6;
 int LEN_RAIL_C =  8;
@@ -252,12 +252,13 @@ struct display_colum_len
 	int available_width;
 };
 
-void display_line(struct display_colum_len *col_len, int flag, int table)
+void display_line(struct display_colum_len *col_len, int flag, int table, char *out_buff)
 {
 	int len_all;
 	int len_middle;
 	int len_min;
 	int len_need = 0;
+	char temp[50] = {0};
 
 	if (table == TABLE_RAIL)
 	{
@@ -284,13 +285,16 @@ void display_line(struct display_colum_len *col_len, int flag, int table)
 	switch (flag)
 	{
 	case FIRST_LINE:
-		printf("┌");
+		sprintf(temp, "┌");
+		strcat(out_buff, temp);
 		break;
 	case NORMAL_LINE:
-		printf("├");
+		sprintf(temp, "├");
+		strcat(out_buff, temp);
 		break;
 	case LAST_LINE:
-		printf("└");
+		sprintf(temp, "└");
+		strcat(out_buff, temp);
 		break;
 	default:
 		break;
@@ -313,38 +317,46 @@ void display_line(struct display_colum_len *col_len, int flag, int table)
 			switch (flag)
 			{
 			case FIRST_LINE:
-				printf("┬");
+				sprintf(temp, "┬");
+				strcat(out_buff, temp);
 				break;
 			case NORMAL_LINE:
-				printf("┼");
+				sprintf(temp, "┼");
+				strcat(out_buff, temp);
 				break;
 			case LAST_LINE:
-				printf("┴");
+				sprintf(temp, "┴");
+				strcat(out_buff, temp);
 				break;
 			default:
 				break;
 			}
 			continue;
 		}
-		printf("─");
+		sprintf(temp, "─");
+		strcat(out_buff, temp);
 	}
 
 	switch (flag)
 	{
 	case FIRST_LINE:
-		printf("┐");
+		sprintf(temp, "┐");
+		strcat(out_buff, temp);
 		break;
 	case NORMAL_LINE:
-		printf("┤");
+		sprintf(temp, "┤");
+		strcat(out_buff, temp);
 		break;
 	case LAST_LINE:
-		printf("┘");
+		sprintf(temp, "┘");
+		strcat(out_buff, temp);
 		break;
 	default:
 		break;
 	}
 
-	printf("%s\n", g_vt_clear_line);
+	sprintf(temp, "%s\n", g_vt_clear_line);
+	strcat(out_buff, temp);
 }
 
 int monitor(struct options_setting *setting)
@@ -352,6 +364,7 @@ int monitor(struct options_setting *setting)
 	signal(SIGINT, handle_sigint);
 	int ret;
 	powers power_val;
+	char output_buff[30000];
 
 	memset(&power_val, 0, sizeof(power_val));
 
@@ -385,93 +398,166 @@ int monitor(struct options_setting *setting)
 		col_len.len_p = 1 + LEN_RAIL_P * 4 + 3;
 		int len_all = col_len.hot_key + col_len.len_name + col_len.len_v + col_len.len_c + col_len.len_p;
 		int len_middle = col_len.hot_key + col_len.len_name + col_len.len_c + col_len.len_p;
+		int len_min = col_len.hot_key + col_len.len_name + col_len.len_p;
 		int max_length, location_length, available_width, available_height;
 		available_width = monitor_size(GET_COLUMN);
 		available_height = monitor_size(GET_ROW);
+		if (available_width < len_min + 1)
+		{
+			printf("%s", g_vt_home);
+			printf("The terminal size is too small!%s\n", g_vt_clear_line);
+			printf("Monitor needs at least %d width to show power data!%s\n", len_min + 1, g_vt_clear_line);
+			printf("Now terminal width is: %d%s\n", available_width, g_vt_clear_line);
+			printf("%s", g_vt_clear_remain);
+			usleep(1000 * 100);
+			continue;
+		}
 		col_len.available_width = available_width;
+		char temp[100] = {0};
+		memset(&output_buff, 0, sizeof(output_buff));
 
-		// printf("val: %f\n", power_val.rail_infos[0].c_avg);
-		printf("%s", g_vt_home);
-
-		// printf("current lines %d%s\n", available_height, g_vt_clear_line);
-		// printf("current columns %d railname: %d%s\n", available_width, LEN_RAIL_NAME, g_vt_clear_line);
-		display_line(&col_len, FIRST_LINE, TABLE_RAIL);
-
+		display_line(&col_len, FIRST_LINE, TABLE_RAIL, output_buff);
 		//header first line
-		printf("│ │ ");
-		PRINTF_MIDDLE("Rail Name", LEN_RAIL_NAME / 2);
-		printf(" │ ");
+		sprintf(temp, "│ │ ");
+		strcat(output_buff, temp);
+		PRINTF_MIDDLE(temp, "Rail Name", LEN_RAIL_NAME / 2);
+		strcat(output_buff, temp);
+		sprintf(temp, " │ ");
+		strcat(output_buff, temp);
 		if (available_width > len_all)
 		{
-			PRINTF_MIDDLE("Voltage(V)", LEN_RAIL_V * 2);
-			printf(" │ ");
+			PRINTF_MIDDLE(temp, "Voltage(V)", LEN_RAIL_V * 2);
+			strcat(output_buff, temp);
+			sprintf(temp, " │ ");
+			strcat(output_buff, temp);
 		}
 		if (available_width > len_middle)
 		{
-			PRINTF_MIDDLE("Current(mA)", LEN_RAIL_C * 2);
-			printf(" │ ");
+			PRINTF_MIDDLE(temp, "Current(mA)", LEN_RAIL_C * 2);
+			strcat(output_buff, temp);
+			sprintf(temp, " │ ");
+			strcat(output_buff, temp);
 		}
-		PRINTF_MIDDLE("Power(mWatt)", LEN_RAIL_P * 2);
-		printf(" │%s\n", g_vt_clear_remain);
+		PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
+		strcat(output_buff, temp);
+		sprintf(temp, " │%s\n", g_vt_clear_line);
+		strcat(output_buff, temp);
 
 		//header second line
-		printf("│ │ ");
-		printf("%*s │ ", LEN_RAIL_NAME, "");
+		sprintf(temp, "│ │ ");
+		strcat(output_buff, temp);
+		sprintf(temp, "%*s │ ", LEN_RAIL_NAME, "");
+		strcat(output_buff, temp);
 		if (available_width > len_all)
-			printf("%*s%*s%*s%*s │ ", LEN_RAIL_V, "now", LEN_RAIL_V, "avg", LEN_RAIL_V, "max", LEN_RAIL_V, "min");
+		{
+			sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_V, "now", LEN_RAIL_V, "avg", LEN_RAIL_V, "max", LEN_RAIL_V, "min");
+			strcat(output_buff, temp);
+		}
 		if (available_width > len_middle)
-			printf("%*s%*s%*s%*s │ ", LEN_RAIL_C, "now", LEN_RAIL_C, "avg", LEN_RAIL_C, "max", LEN_RAIL_C, "min");
-		printf("%*s%*s%*s%*s", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
-		printf(" │%s\n", g_vt_clear_remain);
-		display_line(&col_len, NORMAL_LINE, TABLE_RAIL);
+		{
+			sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_C, "now", LEN_RAIL_C, setting->use_rms ? "rms" : "avg", LEN_RAIL_C, "max", LEN_RAIL_C, "min");
+			strcat(output_buff, temp);
+		}
+		sprintf(temp, "%*s%*s%*s%*s", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
+		strcat(output_buff, temp);
+		sprintf(temp, " │%s\n", g_vt_clear_line);
+		strcat(output_buff, temp);
+		display_line(&col_len, NORMAL_LINE, TABLE_RAIL, output_buff);
 
 		for (int i = 0; i < power_val.rail_num; i++)
 		{
-			printf("│%c│ ", i + 'A');
-			printf("%-*s │ ", LEN_RAIL_NAME, power_val.rail_infos[i].rail_name);
+			sprintf(temp, "│%c│ ", i + 'A');
+			strcat(output_buff, temp);
+			sprintf(temp, "%-*s │ ", LEN_RAIL_NAME, power_val.rail_infos[i].rail_name);
+			strcat(output_buff, temp);
 			if (available_width > len_all) {
-				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_now);
-				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_avg);
-				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_max);
-				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_min);
-				printf(" │ ");
+				sprintf(temp, "%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_now);
+				strcat(output_buff, temp);
+				sprintf(temp, "%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_avg);
+				strcat(output_buff, temp);
+				sprintf(temp, "%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_max);
+				strcat(output_buff, temp);
+				sprintf(temp, "%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_min);
+				strcat(output_buff, temp);
+				sprintf(temp, " │ ");
+				strcat(output_buff, temp);
 			}
 			if (available_width > len_middle) {
-				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_now);
-				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_avg);
-				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_max);
-				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_min);
-				printf(" │ ");
+				sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_now);
+				strcat(output_buff, temp);
+				sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_avg);
+				strcat(output_buff, temp);
+				sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_max);
+				strcat(output_buff, temp);
+				sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_min);
+				strcat(output_buff, temp);
+				sprintf(temp, " │ ");
+				strcat(output_buff, temp);
 			}
-			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_now);
-			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_avg);
-			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_max);
-			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_min);
-			printf(" │%s\n", g_vt_clear_line);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_now);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_avg);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_max);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_min);
+			strcat(output_buff, temp);
+			sprintf(temp, " │%s\n", g_vt_clear_line);
+			strcat(output_buff, temp);
 		}
-		display_line(&col_len, LAST_LINE, TABLE_RAIL);
+		display_line(&col_len, LAST_LINE, TABLE_RAIL, output_buff);
 
 		//display group table
-		display_line(&col_len, FIRST_LINE, TABLE_GROUP);
-		printf("│ ");
-		PRINTF_MIDDLE("Group Name", LEN_RAIL_NAME / 2);
-		printf(" │ ");
-		PRINTF_MIDDLE("Power(mWatt)", LEN_RAIL_P * 2);
-		printf(" │%s\n", g_vt_clear_remain);
-		printf("│ %-*s │ %*s%*s%*s%*s │%s\n", LEN_RAIL_NAME, "",
-		       LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min", g_vt_clear_remain);
-		display_line(&col_len, NORMAL_LINE, TABLE_GROUP);
+		display_line(&col_len, FIRST_LINE, TABLE_GROUP, output_buff);
+		sprintf(temp, "│ ");
+		strcat(output_buff, temp);
+		PRINTF_MIDDLE(temp, "Group Name", LEN_RAIL_NAME / 2);
+		strcat(output_buff, temp);
+		sprintf(temp, " │ ");
+		strcat(output_buff, temp);
+		PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
+		strcat(output_buff, temp);
+		sprintf(temp, " │%s\n", g_vt_clear_line);
+		strcat(output_buff, temp);
+		sprintf(temp, "│ %-*s │ %*s%*s%*s%*s │%s\n", LEN_RAIL_NAME, "",
+		       LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min", g_vt_clear_line);
+		strcat(output_buff, temp);
+		display_line(&col_len, NORMAL_LINE, TABLE_GROUP, output_buff);
 		for (int i = 0; i < power_val.group_num; i++)
 		{
-			printf("│ %-*s │ ", LEN_RAIL_NAME, power_val.group_infos[i].group_name);
-			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_now);
-			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_avg);
-			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_max);
-			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_min);
-			printf(" │%s\n", g_vt_clear_line);
+			sprintf(temp, "│ %-*s │ ", LEN_RAIL_NAME, power_val.group_infos[i].group_name);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_now);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_avg);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_max);
+			strcat(output_buff, temp);
+			sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_min);
+			strcat(output_buff, temp);
+			sprintf(temp, " │%s\n", g_vt_clear_line);
+			strcat(output_buff, temp);
 		}
-		display_line(&col_len, LAST_LINE, TABLE_GROUP);
+		display_line(&col_len, LAST_LINE, TABLE_GROUP, output_buff);
+		if (available_width > len_middle) {
+			sprintf(temp, "Total sample times: %lld   ", power_val.sample_times);
+			strcat(output_buff, temp);
+		}
+		unsigned long interval = power_val.time_now - power_val.time_start;
+		if (interval < 10000)
+			sprintf(temp, "Sampling time: %ldms   ", interval);
+		else
+			sprintf(temp, "Sampling time: %.1lfs   ", interval / 1000.0);
+		strcat(output_buff, temp);
+			sprintf(temp, "Sampling rate: %.1lftimes/s", power_val.sample_times / (interval / 1000.0));
+		strcat(output_buff, temp);
+		sprintf(temp, "%s\n", g_vt_clear_line);
+		strcat(output_buff, temp);
 
+		printf("%s", g_vt_home);
+		// printf("current lines %d%s\n", available_height, g_vt_clear_line);
+		// printf("current columns %d railname: %d%s\n", available_width, LEN_RAIL_NAME, g_vt_clear_line);
+		printf("%s", output_buff);
 		printf("%s", g_vt_clear_remain);
 
 		usleep(1000 * setting->refreshms);

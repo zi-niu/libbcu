@@ -1110,7 +1110,7 @@ void *bcu_monitor(void *threadarg)
 	char sr_name[100];
 	unsigned long start;
 	get_msecond(&start);
-	unsigned long times = 1;
+	unsigned long long times = 1;
 	FILE* fptr = NULL;
 	int reset_flag = 0;
 
@@ -1620,16 +1620,10 @@ void *bcu_monitor(void *threadarg)
 			}
 			m_td->monitor_powers.group_num = num_of_groups;
 		}
+		m_td->monitor_powers.sample_times = times + 1;
+		m_td->monitor_powers.time_start = start;
+		get_msecond(&m_td->monitor_powers.time_now);
 		pthread_mutex_unlock(&m_td->mutex);
-
-		// pthread_mutex_lock(&m_td->mutex);
-		// m_td->is_dump++;
-		// pthread_mutex_unlock(&m_td->mutex);
-		// msleep(10);
-
-
-
-		
 
 		times++;
 

@@ -169,7 +169,7 @@ void set_options_default(struct options_setting *setting)
 	setting->pmt = 0;
 	setting->nodisplay = 0;
 	setting->dumpname = NULL;
-	setting->refreshms = 0;
+	setting->refreshms = 200;
 	setting->use_rms = 0;
 	setting->rangefixed = 0;
 	setting->use_hwfilter = 0;

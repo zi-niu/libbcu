@@ -158,6 +158,9 @@ typedef struct monitor_power {
 	group_info group_infos[MAX_NUMBER_OF_GROUP];
 	int rail_num;
 	int group_num;
+	unsigned long long sample_times;
+	unsigned long time_start;
+	unsigned long time_now;
 } powers;
 
 struct monitor_thread_data
