@@ -1592,6 +1592,10 @@ void *bcu_monitor(void *threadarg)
 			if (board->mappings[k].initinfo != 0)
 			{
 				strcat(m_td->monitor_powers.rail_infos[rail_number].rail_name, board->mappings[k].name);
+				if(range_level[k] == 0x01 || range_level[k] == 0x11)
+					m_td->monitor_powers.rail_infos[rail_number].range_level = 1;
+				else
+					m_td->monitor_powers.rail_infos[rail_number].range_level = 0;
 				m_td->monitor_powers.rail_infos[rail_number].v_now = vnow[k];
 				m_td->monitor_powers.rail_infos[rail_number].v_avg = vavg[k];
 				m_td->monitor_powers.rail_infos[rail_number].v_min = vmin[k];
@@ -1623,6 +1627,7 @@ void *bcu_monitor(void *threadarg)
 		m_td->monitor_powers.sample_times = times + 1;
 		m_td->monitor_powers.time_start = start;
 		get_msecond(&m_td->monitor_powers.time_now);
+		m_td->monitor_powers.range_ctrl = range_control;
 		pthread_mutex_unlock(&m_td->mutex);
 
 		times++;
@@ -1863,7 +1868,7 @@ int bcu_monitor_perpare(struct options_setting *setting)
 	return 0;
 }
 
-int bcu_monitor_set_hotkey(struct options_setting *setting, char hotkey)
+int bcu_monitor_set_hotkey(char hotkey)
 {
 	pthread_mutex_lock(&monitor_td.mutex);
 	monitor_td.hot_key = hotkey;

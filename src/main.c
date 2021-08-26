@@ -230,6 +230,14 @@ char* g_vt_clear_remain = (char*)"\x1B[0J";
 char* g_vt_clear_line = (char*)"\x1B[K";
 char* g_vt_return_last_line = (char*)"\x1B[1A";
 char* g_vt_home = (char*)"\x1B[H";
+#ifdef _WIN32
+char* g_vt_back_enable = (char*)"\x1B[4m";
+char* g_vt_back_default = (char*)"\x1B[24m";
+#endif
+#if defined(linux) || defined(__APPLE__)
+char* g_vt_back_enable = (char*)"\x1B[100m";
+char* g_vt_back_default = (char*)"\x1B[49m";
+#endif
 
 #define FIRST_LINE 0
 #define NORMAL_LINE 1
@@ -237,10 +245,12 @@ char* g_vt_home = (char*)"\x1B[H";
 #define TABLE_RAIL 1
 #define TABLE_GROUP 2
 #define PRINTF_MIDDLE(TEMP, STR, LEN) sprintf(TEMP, "%*s%*s", (LEN + (int)strlen(STR) / 2), STR, (LEN - (int)strlen(STR) / 2), "")
+#define PRINTF_MIDDLE_COLOR(TEMP, STR, OSTR, LEN) sprintf(TEMP, "%*s%*s", (LEN + 11 + (int)strlen(OSTR) / 2), STR, (LEN - (int)strlen(OSTR) / 2), "")
 int LEN_RAIL_NAME = 25;
 int LEN_RAIL_V =  6;
 int LEN_RAIL_C =  8;
 int LEN_RAIL_P =  8;
+int LEN_GROUP_P =  8;
 
 struct display_colum_len
 {
@@ -249,6 +259,7 @@ struct display_colum_len
 	int len_v;
 	int len_c;
 	int len_p;
+	int len_g_p;
 	int available_width;
 };
 
@@ -267,9 +278,7 @@ void display_line(struct display_colum_len *col_len, int flag, int table, char *
 		len_min = col_len->hot_key + col_len->len_name + col_len->len_p;
 	} else if (table == TABLE_GROUP)
 	{
-		len_all = col_len->len_name + col_len->len_v + col_len->len_c + col_len->len_p;
-		len_middle = col_len->len_name + col_len->len_c + col_len->len_p;
-		len_min = col_len->len_name + col_len->len_p;
+		len_min = col_len->len_name + col_len->len_g_p;
 	}
 
 	if (col_len->available_width > len_all)
@@ -303,15 +312,17 @@ void display_line(struct display_colum_len *col_len, int flag, int table, char *
 	for (int i = 1; i < len_need - 1; i++)
 	{
 		if (
-			(len_need == len_all && i == (len_need - col_len->len_name - col_len->len_v - col_len->len_c - col_len->len_p)) ||
-			(len_need == len_all && i == (len_need - col_len->len_v - col_len->len_c - col_len->len_p)) ||
-			(len_need == len_all && i == (len_need - col_len->len_c - col_len->len_p)) ||
-			(len_need == len_all && i == (len_need - col_len->len_p)) ||
-			(len_need == len_middle && i == (len_need - col_len->len_name - col_len->len_c - col_len->len_p)) ||
-			(len_need == len_middle && i == (len_need - col_len->len_c - col_len->len_p)) ||
-			(len_need == len_middle && i == (len_need - col_len->len_p)) ||
-			(len_need == len_min && i == (len_need - col_len->len_name - col_len->len_p)) ||
-			(len_need == len_min && i == (len_need - col_len->len_p))
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_name - col_len->len_v - col_len->len_c - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_v - col_len->len_c - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_c - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_name - col_len->len_c - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_c - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_p)) ||
+			(table == TABLE_GROUP && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_g_p)) ||
+			(table == TABLE_GROUP && len_need == len_min && i == (len_need - col_len->len_g_p))
 		)
 		{
 			switch (flag)
@@ -357,6 +368,34 @@ void display_line(struct display_colum_len *col_len, int flag, int table, char *
 
 	sprintf(temp, "%s\n", g_vt_clear_line);
 	strcat(out_buff, temp);
+}
+
+#ifdef _WIN32
+#include <conio.h>
+#else
+#include <sys/ioctl.h>
+#include <termios.h>
+#endif
+
+static int kb_hit() 
+{
+#ifdef _WIN32
+	return _kbhit();
+#else	
+	struct termios term;
+	tcgetattr(0, &term);
+
+	struct termios term2 = term;
+	term2.c_lflag &= ~ICANON;
+	tcsetattr(0, TCSANOW, &term2);
+
+	int byteswaiting;
+	ioctl(0, FIONREAD, &byteswaiting);
+
+	tcsetattr(0, TCSANOW, &term);
+
+	return byteswaiting > 0;
+#endif
 }
 
 static char catch_input_char()
@@ -414,6 +453,7 @@ int monitor(struct options_setting *setting)
 		col_len.len_v = 1 + LEN_RAIL_V * 4 + 2;
 		col_len.len_c = 1 + LEN_RAIL_C * 4 + 2;
 		col_len.len_p = 1 + LEN_RAIL_P * 4 + 3;
+		col_len.len_g_p = 1 + LEN_GROUP_P * 4 + 3;
 		int len_all = col_len.hot_key + col_len.len_name + col_len.len_v + col_len.len_c + col_len.len_p;
 		int len_middle = col_len.hot_key + col_len.len_name + col_len.len_c + col_len.len_p;
 		int len_min = col_len.hot_key + col_len.len_name + col_len.len_p;
@@ -430,8 +470,18 @@ int monitor(struct options_setting *setting)
 			usleep(1000 * 100);
 			continue;
 		}
+		if (available_height < power_val.rail_num + power_val.group_num + 14 + 1)
+		{
+			printf("%s", g_vt_home);
+			printf("The terminal size is too small!%s\n", g_vt_clear_line);
+			printf("Monitor needs at least %d height to show power data!%s\n", power_val.rail_num + power_val.group_num + 14 + 1, g_vt_clear_line);
+			printf("Now terminal width is: %d%s\n", available_height, g_vt_clear_line);
+			printf("%s", g_vt_clear_remain);
+			usleep(1000 * 100);
+			continue;
+		}
 		col_len.available_width = available_width;
-		char temp[100] = {0};
+		char temp[200] = {0};
 		memset(&output_buff, 0, sizeof(output_buff));
 
 		if (!setting->nodisplay)
@@ -453,12 +503,26 @@ int monitor(struct options_setting *setting)
 			}
 			if (available_width > len_middle)
 			{
-				PRINTF_MIDDLE(temp, "Current(mA)", LEN_RAIL_C * 2);
+				if (power_val.range_ctrl == MONITOR_RANGE_MA)
+					PRINTF_MIDDLE(temp, "Current(mA)", LEN_RAIL_C * 2);
+				else if (power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+					char tp_title[50] = {0};
+					sprintf(tp_title, "Current(mA)/%s(uA)%s", g_vt_back_enable, g_vt_back_default);
+					PRINTF_MIDDLE_COLOR(temp, tp_title, "Current(mA)/(uA)", LEN_RAIL_C * 2);
+				} else
+					PRINTF_MIDDLE(temp, "Current(uA)", LEN_RAIL_C * 2);
 				strcat(output_buff, temp);
 				sprintf(temp, " │ ");
 				strcat(output_buff, temp);
 			}
-			PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
+			if (power_val.range_ctrl == MONITOR_RANGE_MA)
+					PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
+				else if (power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+					char tp_title[50] = {0};
+					sprintf(tp_title, "Power(mWatt)/%s(uWatt)%s", g_vt_back_enable, g_vt_back_default);
+					PRINTF_MIDDLE_COLOR(temp, tp_title, "Power(mWatt)/(uWatt)", LEN_RAIL_P * 2);
+				} else
+					PRINTF_MIDDLE(temp, "Power(uWatt)", LEN_RAIL_P * 2);
 			strcat(output_buff, temp);
 			sprintf(temp, " │%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
@@ -486,7 +550,10 @@ int monitor(struct options_setting *setting)
 
 			for (int i = 0; i < power_val.rail_num; i++)
 			{
-				sprintf(temp, "│%c│ ", i + 'A');
+				if (i < 26)
+					sprintf(temp, "│%c│ ", i + 'A');
+				else
+					sprintf(temp, "│%c│ ", i + 'a' - 26);
 				strcat(output_buff, temp);
 				sprintf(temp, "%-*s │ ", LEN_RAIL_NAME, power_val.rail_infos[i].rail_name);
 				strcat(output_buff, temp);
@@ -503,6 +570,10 @@ int monitor(struct options_setting *setting)
 					strcat(output_buff, temp);
 				}
 				if (available_width > len_middle) {
+					if (power_val.rail_infos[i].range_level && power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+						sprintf(temp, "%s", g_vt_back_enable);
+						strcat(output_buff, temp);
+					}
 					sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_now);
 					strcat(output_buff, temp);
 					sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_avg);
@@ -511,7 +582,15 @@ int monitor(struct options_setting *setting)
 					strcat(output_buff, temp);
 					sprintf(temp, "%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_min);
 					strcat(output_buff, temp);
+					if (power_val.rail_infos[i].range_level && power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+						sprintf(temp, "%s", g_vt_back_default);
+						strcat(output_buff, temp);
+					}
 					sprintf(temp, " │ ");
+					strcat(output_buff, temp);
+				}
+				if (power_val.rail_infos[i].range_level && power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+					sprintf(temp, "%s", g_vt_back_enable);
 					strcat(output_buff, temp);
 				}
 				sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_now);
@@ -522,6 +601,10 @@ int monitor(struct options_setting *setting)
 				strcat(output_buff, temp);
 				sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_min);
 				strcat(output_buff, temp);
+				if (power_val.rail_infos[i].range_level && power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+					sprintf(temp, "%s", g_vt_back_default);
+					strcat(output_buff, temp);
+				}
 				sprintf(temp, " │%s\n", g_vt_clear_line);
 				strcat(output_buff, temp);
 			}
@@ -535,25 +618,25 @@ int monitor(struct options_setting *setting)
 			strcat(output_buff, temp);
 			sprintf(temp, " │ ");
 			strcat(output_buff, temp);
-			PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
+			PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_GROUP_P * 2);
 			strcat(output_buff, temp);
 			sprintf(temp, " │%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
 			sprintf(temp, "│ %-*s │ %*s%*s%*s%*s │%s\n", LEN_RAIL_NAME, "",
-			LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min", g_vt_clear_line);
+			LEN_GROUP_P, "now", LEN_GROUP_P, "avg", LEN_GROUP_P, "max", LEN_GROUP_P, "min", g_vt_clear_line);
 			strcat(output_buff, temp);
 			display_line(&col_len, NORMAL_LINE, TABLE_GROUP, output_buff);
 			for (int i = 0; i < power_val.group_num; i++)
 			{
 				sprintf(temp, "│ %-*s │ ", LEN_RAIL_NAME, power_val.group_infos[i].group_name);
 				strcat(output_buff, temp);
-				sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_now);
+				sprintf(temp, "%*.2f", LEN_GROUP_P, power_val.group_infos[i].p_now);
 				strcat(output_buff, temp);
-				sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_avg);
+				sprintf(temp, "%*.2f", LEN_GROUP_P, power_val.group_infos[i].p_avg);
 				strcat(output_buff, temp);
-				sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_max);
+				sprintf(temp, "%*.2f", LEN_GROUP_P, power_val.group_infos[i].p_max);
 				strcat(output_buff, temp);
-				sprintf(temp, "%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_min);
+				sprintf(temp, "%*.2f", LEN_GROUP_P, power_val.group_infos[i].p_min);
 				strcat(output_buff, temp);
 				sprintf(temp, " │%s\n", g_vt_clear_line);
 				strcat(output_buff, temp);
@@ -586,12 +669,29 @@ int monitor(struct options_setting *setting)
 			sprintf(temp, "%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
 		}
+		sprintf(temp, "Hot-key: 1=reset %s; 2=reset MaxMin; 3=reset %s and MaxMin; 4=switch show mA/auto/uA; Ctrl-C to exit...%s\n",
+						setting->use_rms ? "RMS" : "Avg", setting->use_rms ? "RMS" : "Avg", g_vt_clear_line);
+		strcat(output_buff, temp);
+		// sprintf(temp, "         5=reset board; 6=resume the board; Ctrl-C to exit...%s\n", g_vt_clear_line);
+		// strcat(output_buff, temp);
+		sprintf(temp, "press the letter on keyboard to control coresponding extra sense resistor(Extra SR)%s\n", g_vt_clear_line);
+		strcat(output_buff, temp);
+		sprintf(temp, "pressed (Please pay attention to letter case): %s\n", g_vt_clear_line);
+		strcat(output_buff, temp);
 
 		printf("%s", g_vt_home);
 		// printf("current lines %d%s\n", available_height, g_vt_clear_line);
 		// printf("current columns %d railname: %d%s\n", available_width, LEN_RAIL_NAME, g_vt_clear_line);
 		printf("%s", output_buff);
 		printf("%s", g_vt_clear_remain);
+
+		bcu_monitor_set_hotkey(catch_input_char());
+		if (power_val.range_ctrl == MONITOR_RANGE_MA)
+			LEN_RAIL_C = LEN_RAIL_P = 8;
+		else if (power_val.range_ctrl == MONITOR_RANGE_AUTO)
+			LEN_RAIL_C = LEN_RAIL_P = 11;
+		else
+			LEN_RAIL_C = LEN_RAIL_P = 11;
 
 		usleep(1000 * setting->refreshms);
 	}

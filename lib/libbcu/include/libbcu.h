@@ -51,6 +51,10 @@
 #define PARSER_EEPROM_UPDATE_USER_SN	5
 #define PARSER_EEPROM_ERASE		6
 
+#define MONITOR_RANGE_MA	0
+#define MONITOR_RANGE_AUTO	1
+#define MONITOR_RANGE_UA	2
+
 #define LSBOOTMODE_NSHOWID	0
 #define LSBOOTMODE_SHOWID	1
 
@@ -131,6 +135,7 @@ struct options_setting {
 
 typedef struct monitor_rail_power {
 	char rail_name[MAX_MAPPING_NAME_LENGTH];
+	int range_level;
 	double v_now;
 	double v_avg;
 	double v_min;
@@ -161,6 +166,7 @@ typedef struct monitor_power {
 	unsigned long long sample_times;
 	unsigned long time_start;
 	unsigned long time_now;
+	int range_ctrl;
 } powers;
 
 struct monitor_thread_data
@@ -205,7 +211,7 @@ int bcu_onoff(struct options_setting *setting, int delay_us);
 int bcu_init(struct options_setting *setting);
 int bcu_deinit(struct options_setting *setting);
 int bcu_monitor_perpare(struct options_setting *setting);
-int bcu_monitor_set_hotkey(struct options_setting *setting, char hotkey);
+int bcu_monitor_set_hotkey(char hotkey);
 int bcu_monitor_getvalue(struct options_setting *setting, powers *power_info);
 int bcu_monitor_is_stop(void);
 int bcu_monitor_get_err(void);
