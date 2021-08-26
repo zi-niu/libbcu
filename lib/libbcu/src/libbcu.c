@@ -1629,10 +1629,6 @@ void *bcu_monitor(void *threadarg)
 
 		//finally,switch the SR
 		ch = m_td->hot_key;
-		pthread_mutex_lock(&m_td->mutex);
-		m_td->hot_key = 0;
-		pthread_mutex_unlock(&m_td->mutex);
-
 		if (isxdigit(ch))
 		{
 			int hotkey_index = (int)ch - '0';
@@ -1758,6 +1754,9 @@ void *bcu_monitor(void *threadarg)
 				}
 			}
 		}
+		pthread_mutex_lock(&m_td->mutex);
+		m_td->hot_key = 0;
+		pthread_mutex_unlock(&m_td->mutex);
 	}
 
 	free_device_linkedlist_backward(end_point);
