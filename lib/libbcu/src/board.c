@@ -791,7 +791,7 @@ int get_max_power_name_length(struct board_info *board)
 	int i = 0;
 	while (board->mappings[i].name != NULL)
 	{
-		if (board->mappings[i].type == power && strlen(board->mappings[i].name) > max)
+		if (board->mappings[i].type == power && board->mappings[i].initinfo && strlen(board->mappings[i].name) > max)
 		{
 			max = (int)strlen(board->mappings[i].name);
 		}

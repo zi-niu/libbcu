@@ -29,7 +29,6 @@
 *
 */
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
@@ -39,7 +38,55 @@
 #include "libbcu.h"
 #include "libbcu_version.h"
 
+#ifdef _WIN32
+#define _CRT_SECURE_NO_WARNINGS //in order to use strcpy without error
+#include <windows.h>
+#include <processthreadsapi.h>
+#endif
+
+#if defined(linux) || defined(__APPLE__)
+#include <unistd.h>
+#include <sys/ioctl.h>
+#include <stdlib.h>
+// #include <curses.h>
+// #include "ftdi.h"
+#endif
+
+#define GET_COLUMN	0
+#define GET_ROW		1
+
 int GV_MONITOR_TERMINATED = 0;
+
+static int monitor_size(int columns_or_rows)
+{
+#ifdef _WIN32
+	//printf("monitor_dimension not yet implemented for windows\n");
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	int columns, rows;
+
+	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+	columns = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+	rows = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+
+	//printf("columns: %d\n", columns);
+	//printf("rows: %d\n", rows);
+	if (columns_or_rows == 0)
+		return columns;
+	else
+		return rows;
+
+#else
+	struct winsize w;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+	// printf ("current lines %d\n", w.ws_row);
+	// printf ("current columns %d\n", w.ws_col);
+	if (columns_or_rows == GET_COLUMN)
+		return w.ws_col;
+	else
+		return w.ws_row;
+#endif
+}
 
 int init(struct options_setting *setting)
 {
@@ -184,6 +231,122 @@ char* g_vt_clear_line = (char*)"\x1B[K";
 char* g_vt_return_last_line = (char*)"\x1B[1A";
 char* g_vt_home = (char*)"\x1B[H";
 
+#define FIRST_LINE 0
+#define NORMAL_LINE 1
+#define LAST_LINE 2
+#define TABLE_RAIL 1
+#define TABLE_GROUP 2
+#define PRINTF_MIDDLE(STR, LEN) printf("%*s%*s", (LEN + (int)strlen(STR) / 2), STR, (LEN - (int)strlen(STR) / 2), "")
+int LEN_RAIL_NAME = 25;
+int LEN_RAIL_V =  6;
+int LEN_RAIL_C =  8;
+int LEN_RAIL_P =  8;
+
+struct display_colum_len
+{
+	int hot_key;
+	int len_name;
+	int len_v;
+	int len_c;
+	int len_p;
+	int available_width;
+};
+
+void display_line(struct display_colum_len *col_len, int flag, int table)
+{
+	int len_all;
+	int len_middle;
+	int len_min;
+	int len_need = 0;
+
+	if (table == TABLE_RAIL)
+	{
+		len_all = col_len->hot_key + col_len->len_name + col_len->len_v + col_len->len_c + col_len->len_p;
+		len_middle = col_len->hot_key + col_len->len_name + col_len->len_c + col_len->len_p;
+		len_min = col_len->hot_key + col_len->len_name + col_len->len_p;
+	} else if (table == TABLE_GROUP)
+	{
+		len_all = col_len->len_name + col_len->len_v + col_len->len_c + col_len->len_p;
+		len_middle = col_len->len_name + col_len->len_c + col_len->len_p;
+		len_min = col_len->len_name + col_len->len_p;
+	}
+
+	if (col_len->available_width > len_all)
+		len_need = len_all;
+	else if (col_len->available_width > len_middle)
+		len_need = len_middle;
+	else if (col_len->available_width > len_min)
+		len_need = len_min;
+
+	if (table == TABLE_GROUP)
+		len_need = len_min;
+
+	switch (flag)
+	{
+	case FIRST_LINE:
+		printf("┌");
+		break;
+	case NORMAL_LINE:
+		printf("├");
+		break;
+	case LAST_LINE:
+		printf("└");
+		break;
+	default:
+		break;
+	}
+
+	for (int i = 1; i < len_need - 1; i++)
+	{
+		if (
+			(len_need == len_all && i == (len_need - col_len->len_name - col_len->len_v - col_len->len_c - col_len->len_p)) ||
+			(len_need == len_all && i == (len_need - col_len->len_v - col_len->len_c - col_len->len_p)) ||
+			(len_need == len_all && i == (len_need - col_len->len_c - col_len->len_p)) ||
+			(len_need == len_all && i == (len_need - col_len->len_p)) ||
+			(len_need == len_middle && i == (len_need - col_len->len_name - col_len->len_c - col_len->len_p)) ||
+			(len_need == len_middle && i == (len_need - col_len->len_c - col_len->len_p)) ||
+			(len_need == len_middle && i == (len_need - col_len->len_p)) ||
+			(len_need == len_min && i == (len_need - col_len->len_name - col_len->len_p)) ||
+			(len_need == len_min && i == (len_need - col_len->len_p))
+		)
+		{
+			switch (flag)
+			{
+			case FIRST_LINE:
+				printf("┬");
+				break;
+			case NORMAL_LINE:
+				printf("┼");
+				break;
+			case LAST_LINE:
+				printf("┴");
+				break;
+			default:
+				break;
+			}
+			continue;
+		}
+		printf("─");
+	}
+
+	switch (flag)
+	{
+	case FIRST_LINE:
+		printf("┐");
+		break;
+	case NORMAL_LINE:
+		printf("┤");
+		break;
+	case LAST_LINE:
+		printf("┘");
+		break;
+	default:
+		break;
+	}
+
+	printf("%s\n", g_vt_clear_line);
+}
+
 int monitor(struct options_setting *setting)
 {
 	signal(SIGINT, handle_sigint);
@@ -199,51 +362,115 @@ int monitor(struct options_setting *setting)
 		return ret;
 	}
 
-	while(!GV_MONITOR_TERMINATED && !(bcu_monitor_is_stop())){
+	LEN_RAIL_NAME = bcu_return_rail_name_max_len(setting);
+	if (LEN_RAIL_NAME < 14)
+		LEN_RAIL_NAME = 14;
+	if (LEN_RAIL_NAME % 2)
+		LEN_RAIL_NAME++;
+
+	while(!GV_MONITOR_TERMINATED && !(bcu_monitor_is_stop()))
+	{
 		ret = bcu_monitor_getvalue(setting, &power_val);
 		if (ret)
 			printf("%s", bcu_get_err_str(ret));
+
+		if (!power_val.rail_num)
+			continue;
+
+		struct display_colum_len col_len;
+		col_len.hot_key = 2;
+		col_len.len_name = 1 + LEN_RAIL_NAME + 2;
+		col_len.len_v = 1 + LEN_RAIL_V * 4 + 2;
+		col_len.len_c = 1 + LEN_RAIL_C * 4 + 2;
+		col_len.len_p = 1 + LEN_RAIL_P * 4 + 3;
+		int len_all = col_len.hot_key + col_len.len_name + col_len.len_v + col_len.len_c + col_len.len_p;
+		int len_middle = col_len.hot_key + col_len.len_name + col_len.len_c + col_len.len_p;
+		int max_length, location_length, available_width, available_height;
+		available_width = monitor_size(GET_COLUMN);
+		available_height = monitor_size(GET_ROW);
+		col_len.available_width = available_width;
+
 		// printf("val: %f\n", power_val.rail_infos[0].c_avg);
 		printf("%s", g_vt_home);
-		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
-		printf("%-30s | %6s%6s%6s%6s | %10s%10s%10s%10s | %10s%10s%10s%10s%s\n", "Rail Name",
-		       "now", "avg", "max", "min",
-		       "now", "avg", "max", "min",
-		       "now", "avg", "max", "min", g_vt_clear_remain);
-		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
+
+		// printf("current lines %d%s\n", available_height, g_vt_clear_line);
+		// printf("current columns %d railname: %d%s\n", available_width, LEN_RAIL_NAME, g_vt_clear_line);
+		display_line(&col_len, FIRST_LINE, TABLE_RAIL);
+
+		//header first line
+		printf("│ │ ");
+		PRINTF_MIDDLE("Rail Name", LEN_RAIL_NAME / 2);
+		printf(" │ ");
+		if (available_width > len_all)
+		{
+			PRINTF_MIDDLE("Voltage(V)", LEN_RAIL_V * 2);
+			printf(" │ ");
+		}
+		if (available_width > len_middle)
+		{
+			PRINTF_MIDDLE("Current(mA)", LEN_RAIL_C * 2);
+			printf(" │ ");
+		}
+		PRINTF_MIDDLE("Power(mWatt)", LEN_RAIL_P * 2);
+		printf(" │%s\n", g_vt_clear_remain);
+
+		//header second line
+		printf("│ │ ");
+		printf("%*s │ ", LEN_RAIL_NAME, "");
+		if (available_width > len_all)
+			printf("%*s%*s%*s%*s │ ", LEN_RAIL_V, "now", LEN_RAIL_V, "avg", LEN_RAIL_V, "max", LEN_RAIL_V, "min");
+		if (available_width > len_middle)
+			printf("%*s%*s%*s%*s │ ", LEN_RAIL_C, "now", LEN_RAIL_C, "avg", LEN_RAIL_C, "max", LEN_RAIL_C, "min");
+		printf("%*s%*s%*s%*s", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
+		printf(" │%s\n", g_vt_clear_remain);
+		display_line(&col_len, NORMAL_LINE, TABLE_RAIL);
+
 		for (int i = 0; i < power_val.rail_num; i++)
 		{
-			printf("%-30s | ", power_val.rail_infos[i].rail_name);
-			printf("%6.2f", power_val.rail_infos[i].v_now);
-			printf("%6.2f", power_val.rail_infos[i].v_avg);
-			printf("%6.2f", power_val.rail_infos[i].v_max);
-			printf("%6.2f", power_val.rail_infos[i].v_min);
-			printf(" | ");
-			printf("%10.2f", power_val.rail_infos[i].c_now);
-			printf("%10.2f", power_val.rail_infos[i].c_avg);
-			printf("%10.2f", power_val.rail_infos[i].c_max);
-			printf("%10.2f", power_val.rail_infos[i].c_min);
-			printf(" | ");
-			printf("%10.2f", power_val.rail_infos[i].p_now);
-			printf("%10.2f", power_val.rail_infos[i].p_avg);
-			printf("%10.2f", power_val.rail_infos[i].p_max);
-			printf("%10.2f", power_val.rail_infos[i].p_min);
-			printf("%s\n", g_vt_clear_line);
+			printf("│%c│ ", i + 'A');
+			printf("%-*s │ ", LEN_RAIL_NAME, power_val.rail_infos[i].rail_name);
+			if (available_width > len_all) {
+				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_now);
+				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_avg);
+				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_max);
+				printf("%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_min);
+				printf(" │ ");
+			}
+			if (available_width > len_middle) {
+				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_now);
+				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_avg);
+				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_max);
+				printf("%*.2f", LEN_RAIL_C, power_val.rail_infos[i].c_min);
+				printf(" │ ");
+			}
+			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_now);
+			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_avg);
+			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_max);
+			printf("%*.2f", LEN_RAIL_P, power_val.rail_infos[i].p_min);
+			printf(" │%s\n", g_vt_clear_line);
 		}
-		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
-		printf("%-30s | %10s%10s%10s%10s%s\n", "Group Name",
-		       "now", "avg", "max", "min", g_vt_clear_remain);
+		display_line(&col_len, LAST_LINE, TABLE_RAIL);
+
+		//display group table
+		display_line(&col_len, FIRST_LINE, TABLE_GROUP);
+		printf("│ ");
+		PRINTF_MIDDLE("Group Name", LEN_RAIL_NAME / 2);
+		printf(" │ ");
+		PRINTF_MIDDLE("Power(mWatt)", LEN_RAIL_P * 2);
+		printf(" │%s\n", g_vt_clear_remain);
+		printf("│ %-*s │ %*s%*s%*s%*s │%s\n", LEN_RAIL_NAME, "",
+		       LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min", g_vt_clear_remain);
+		display_line(&col_len, NORMAL_LINE, TABLE_GROUP);
 		for (int i = 0; i < power_val.group_num; i++)
 		{
-			printf("%-30s | ", power_val.group_infos[i].group_name);
-			printf("%10.2f", power_val.group_infos[i].p_now);
-			printf("%10.2f", power_val.group_infos[i].p_avg);
-			printf("%10.2f", power_val.group_infos[i].p_max);
-			printf("%10.2f", power_val.group_infos[i].p_min);
-			printf("%s\n", g_vt_clear_line);
+			printf("│ %-*s │ ", LEN_RAIL_NAME, power_val.group_infos[i].group_name);
+			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_now);
+			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_avg);
+			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_max);
+			printf("%*.2f", LEN_RAIL_P, power_val.group_infos[i].p_min);
+			printf(" │%s\n", g_vt_clear_line);
 		}
-		printf("-----------------------------------------------------------------------------------------------------------------------------------------------%s\n", g_vt_clear_line);
-
+		display_line(&col_len, LAST_LINE, TABLE_GROUP);
 
 		printf("%s", g_vt_clear_remain);
 

@@ -218,5 +218,6 @@ int bcu_lsgpio(struct options_setting *setting, char gpiolist[][MAX_MAPPING_NAME
 int bcu_get_yaml_file_path(char *yamlfilepath);
 int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath);
 void bcu_remove_all_ftdi_port(void);
+int bcu_return_rail_name_max_len(struct options_setting *setting);
 
 #endif

@@ -1908,6 +1908,15 @@ int bcu_monitor_unperpare(struct options_setting *setting)
 	return monitor_td.ret;
 }
 
+int bcu_return_rail_name_max_len(struct options_setting *setting)
+{
+	struct board_info* board = get_board(setting->board);
+	if (board == NULL)
+		return -LIBBCU_ERR_NO_THIS_BOARD;
+
+	return get_max_power_name_length(board);
+}
+
 void bcu_remove_all_ftdi_port(void)
 {
 	ft4232h_i2c_remove_all();
