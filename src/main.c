@@ -845,7 +845,11 @@ retry:
 		if (!power_val.rail_num)
 			continue;
 
+#ifdef _WIN32
+		iDataNum = recv(client, recvbuf, 1024, 0);
+#else
 		iDataNum = recv(client, recvbuf, 1024, MSG_DONTWAIT);
+#endif
 		if (iDataNum > 0)
 		{
 			// printf("Received data: [%s]\n", recvbuf);
