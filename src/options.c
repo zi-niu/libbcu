@@ -29,7 +29,11 @@
 *
 */
 
+#ifdef _WIN32
+#include "getopt.h"
+#else
 #include <getopt.h>
+#endif
 #include <string.h>
 #include <stdlib.h>
 #include "options.h"

@@ -373,16 +373,16 @@ void ft_list_devices(char location_str[][MAX_LOCATION_ID_LENGTH], int *board_num
 				detected_boards++;
 			}
 		}
-		if (mode == LIST_DEVICE_MODE_PRINT)
+		if (mode == LIST_DEVICE_MODE_PRINT) {
 			mprintf(3, "number of boards connected through FTDI device found: %d\n", detected_boards);
-		else
+		} else
 			*board_num = detected_boards;
 
 		for (int j = 0; j < detected_boards; j++)
 		{
-			if (mode == LIST_DEVICE_MODE_PRINT)
+			if (mode == LIST_DEVICE_MODE_PRINT) {
 				mprintf(3, "board [%d] location_id=%s\n", j, location_id_str[j]);
-			else
+			} else
 				strcpy(location_str[j], location_id_str[j]);
 			mprintf(5, "id: %s\n", location_id_str[j]);
 			mprintf(5, "A: %x\n", board_table[j][0]);

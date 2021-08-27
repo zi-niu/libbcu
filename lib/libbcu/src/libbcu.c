@@ -33,6 +33,7 @@
 #define _CRT_SECURE_NO_WARNINGS //in order to use strcpy without error
 #include <windows.h>
 #include <processthreadsapi.h>
+#include <process.h>
 #endif
 
 #if defined(linux) || defined(__APPLE__)
@@ -40,6 +41,7 @@
 #include <sys/ioctl.h>
 #include <stdlib.h>
 #include <curses.h>
+#include <pthread.h>
 // #include "ftdi.h"
 #endif
 
@@ -50,7 +52,6 @@
 #include <signal.h>
 #include <ctype.h>
 #include <math.h>
-#include <pthread.h>
 
 #include "parser.h"
 #include "libbcu_version.h"
@@ -117,7 +118,8 @@ int find_board_by_eeprom(char *boardname, int *boardnum)
 
 char *bcu_get_err_str(int err_num)
 {
-	mprintf(2, "\nraw error code: %d\n", err_num);
+	if (err_num)
+		mprintf(2, "\nraw error code: %d\n", err_num);
 	switch (err_num)
 	{
 	case 0:
@@ -1073,9 +1075,15 @@ static int get_msecond(unsigned long* current_time)
 #endif
 }
 
+#ifdef _WIN32
+HANDLE hThread;
+DWORD ThreadID;
+#else
 pthread_t monitor_thread;
+#endif
 struct monitor_thread_data monitor_td;
 
+//DWORD WINAPI bcu_monitor(LPVOID threadarg)
 void *bcu_monitor(void *threadarg)
 {
 	struct monitor_thread_data *m_td =  (struct monitor_thread_data *) threadarg;
@@ -1579,7 +1587,11 @@ void *bcu_monitor(void *threadarg)
 			fprintf(fptr, "\n");
 		}
 
+#ifdef _WIN32
+		WaitForSingleObject(m_td->h_mutex, INFINITE);
+#else
 		pthread_mutex_lock(&m_td->mutex);
+#endif
 
 		memset(&m_td->monitor_powers, 0, sizeof(m_td->monitor_powers));
 
@@ -1631,7 +1643,11 @@ void *bcu_monitor(void *threadarg)
 		m_td->monitor_powers.time_start = start;
 		get_msecond(&m_td->monitor_powers.time_now);
 		m_td->monitor_powers.range_ctrl = range_control;
+#ifdef _WIN32
+		ReleaseMutex(m_td->h_mutex);
+#else
 		pthread_mutex_unlock(&m_td->mutex);
+#endif
 
 		times++;
 
@@ -1762,9 +1778,17 @@ void *bcu_monitor(void *threadarg)
 				}
 			}
 		}
+#ifdef _WIN32
+		WaitForSingleObject(m_td->mutex, INFINITE);
+#else
 		pthread_mutex_lock(&m_td->mutex);
+#endif
 		m_td->hot_key = 0;
+#ifdef _WIN32
+		ReleaseMutex(m_td->h_mutex);
+#else
 		pthread_mutex_unlock(&m_td->mutex);
+#endif
 	}
 
 	free_device_linkedlist_backward(end_point);
@@ -1836,7 +1860,11 @@ void *bcu_monitor(void *threadarg)
 	}
 #endif
 
+#ifdef _WIN32
+	return threadarg;
+#else
 	pthread_exit(NULL);
+#endif
 }
 
 int bcu_monitor_perpare(struct options_setting *setting)
@@ -1847,10 +1875,19 @@ int bcu_monitor_perpare(struct options_setting *setting)
 
 	memset(&monitor_td, 0, sizeof(monitor_td));
 
+#ifdef _WIN32
+	monitor_td.h_mutex = CreateMutex(NULL, FALSE, NULL);
+#else
 	if (pthread_mutex_init(&monitor_td.mutex, NULL))
 		return -LIBBCU_ERR_MUTEX_LOCK_INIT;
+#endif
 
+#ifdef _WIN32
+	WaitForSingleObject(monitor_td.h_mutex, INFINITE);
+#else
 	pthread_mutex_lock(&monitor_td.mutex);
+#endif
+
 	monitor_td.is_dump = setting->dump;
 	if (setting->dumpname)
 		strcpy(monitor_td.dumpname, setting->dumpname);
@@ -1860,22 +1897,46 @@ int bcu_monitor_perpare(struct options_setting *setting)
 	monitor_td.is_stats = setting->dump_statistics;
 	monitor_td.is_unipolar = setting->use_unipolar;
 	monitor_td.setting = setting;
+#ifdef _WIN32
+	ReleaseMutex(monitor_td.h_mutex);
+#else
 	pthread_mutex_unlock(&monitor_td.mutex);
+#endif
 
+#ifdef _WIN32
+	//hThread = CreateThread(NULL, 0, bcu_monitor, (LPVOID)(1), NULL, &ThreadID);
+	hThread = _beginthread(bcu_monitor, 0, (void*)&monitor_td);
+	if (hThread < 0)
+	{
+		mprintf(2, "pthread_create error: error_code = %d\n", ret);
+		return -LIBBCU_ERR_CREATE_MONITOR_THREAD;
+	}
+#else
 	ret = pthread_create(&monitor_thread, NULL, bcu_monitor, (void *)&monitor_td);
 	if (ret != 0) {
 		mprintf(2, "pthread_create error: error_code = %d\n", ret);
 		return -LIBBCU_ERR_CREATE_MONITOR_THREAD;
 	}
+#endif
 
 	return 0;
 }
 
 int bcu_monitor_set_hotkey(char hotkey)
 {
+#ifdef _WIN32
+	WaitForSingleObject(monitor_td.h_mutex, INFINITE);
+#else
 	pthread_mutex_lock(&monitor_td.mutex);
+#endif
+
 	monitor_td.hot_key = hotkey;
+
+#ifdef _WIN32
+	ReleaseMutex(monitor_td.h_mutex);
+#else
 	pthread_mutex_unlock(&monitor_td.mutex);
+#endif
 	while (monitor_td.hot_key != hotkey) {}
 
 	return 0;
@@ -1883,9 +1944,19 @@ int bcu_monitor_set_hotkey(char hotkey)
 
 int bcu_monitor_getvalue(struct options_setting *setting, powers *power_info)
 {
+#ifdef _WIN32
+	WaitForSingleObject(monitor_td.h_mutex, INFINITE);
+#else
 	pthread_mutex_lock(&monitor_td.mutex);
+#endif
+
 	memcpy(power_info, &monitor_td.monitor_powers, sizeof(powers));
+
+#ifdef _WIN32
+	ReleaseMutex(monitor_td.h_mutex);
+#else
 	pthread_mutex_unlock(&monitor_td.mutex);
+#endif
 
 	return 0;
 }
@@ -1902,9 +1973,19 @@ int bcu_monitor_get_err(void)
 
 int bcu_monitor_unperpare(struct options_setting *setting)
 {
+#ifdef _WIN32
+	CloseHandle(monitor_td.h_mutex);
+#else
 	pthread_mutex_destroy(&monitor_td.mutex);
+#endif
+
 	monitor_td.is_stop = 1;
+
+#ifdef _WIN32
+	WaitForSingleObject(hThread, INFINITE);
+#else
 	pthread_join(monitor_thread, NULL);
+#endif
 
 	return monitor_td.ret;
 }

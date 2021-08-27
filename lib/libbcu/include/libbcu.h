@@ -29,9 +29,12 @@
 *
 */
 
-#ifndef HELLO_H
-#define HELLO_H
+#ifndef LIBBCU_H
+#define LIBBCU_H
 #include <stdio.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 #define MAX_PATH_LENGTH			800	//maximum path length allowed
 #define MAX_NUMBER_OF_POWER		100	//maximum number of power types
@@ -186,7 +189,11 @@ struct monitor_thread_data
 	int is_stop;
 	char hot_key;
 	powers monitor_powers;
+#ifdef _WIN32
+	HANDLE h_mutex;
+#else
 	pthread_mutex_t mutex;
+#endif
 	struct options_setting *setting;
 };
 

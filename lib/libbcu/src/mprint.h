@@ -33,12 +33,12 @@
 
 // #define GV_DEBUG_LEVEL 1
 extern int GV_DEBUG_LEVEL;
-#define mprintf(level, args...)			\
-{						\
-	do {					\
-		if (GV_DEBUG_LEVEL >= level)	\
-			printf(args);		\
-	} while (0);				\
+#define mprintf(level, format, ...)			\
+{							\
+	do {						\
+		if (GV_DEBUG_LEVEL >= level)		\
+			printf(format, ##__VA_ARGS__);	\
+	} while (0);					\
 }
 
 #endif

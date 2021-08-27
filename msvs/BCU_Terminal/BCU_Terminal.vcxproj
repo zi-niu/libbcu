@@ -144,7 +144,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\src\getopt.c" />
     <ClCompile Include="..\..\src\main.c" />
+    <ClCompile Include="..\..\src\options.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\lib\libbcu\include\libbcu.h" />
+    <ClInclude Include="..\..\lib\libbcu\include\libbcu_version.h" />
+    <ClInclude Include="..\..\src\error_def.h" />
+    <ClInclude Include="..\..\src\getopt.h" />
+    <ClInclude Include="..\..\src\options.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

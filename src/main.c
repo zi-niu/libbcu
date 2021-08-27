@@ -31,26 +31,27 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#include <unistd.h>
-#include <pthread.h>
-
-#include "options.h"
-#include "libbcu.h"
-#include "libbcu_version.h"
 
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS //in order to use strcpy without error
 #include <windows.h>
 #include <processthreadsapi.h>
+#include <process.h>
 #endif
 
 #if defined(linux) || defined(__APPLE__)
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
 // #include <curses.h>
 // #include "ftdi.h"
 #endif
+
+#include "options.h"
+#include "libbcu.h"
+#include "libbcu_version.h"
 
 #define GET_COLUMN	0
 #define GET_ROW		1
@@ -294,82 +295,10 @@ void display_line(struct display_colum_len *col_len, int flag, int table, char *
 	if (table == TABLE_GROUP)
 		len_need = len_min;
 
-	switch (flag)
+	for (int i = 0; i < len_need; i++)
 	{
-	case FIRST_LINE:
-		sprintf(temp, "┌");
+		sprintf(temp, "-");
 		strcat(out_buff, temp);
-		break;
-	case NORMAL_LINE:
-		sprintf(temp, "├");
-		strcat(out_buff, temp);
-		break;
-	case LAST_LINE:
-		sprintf(temp, "└");
-		strcat(out_buff, temp);
-		break;
-	default:
-		break;
-	}
-
-	for (int i = 1; i < len_need - 1; i++)
-	{
-		if (
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_name - col_len->len_v - col_len->len_c - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_v - col_len->len_c - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_c - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_name - col_len->len_c - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_c - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_p - col_len->len_range)) ||
-			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_range)) ||
-			(table == TABLE_GROUP && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_g_p)) ||
-			(table == TABLE_GROUP && len_need == len_min && i == (len_need - col_len->len_g_p))
-		)
-		{
-			switch (flag)
-			{
-			case FIRST_LINE:
-				sprintf(temp, "┬");
-				strcat(out_buff, temp);
-				break;
-			case NORMAL_LINE:
-				sprintf(temp, "┼");
-				strcat(out_buff, temp);
-				break;
-			case LAST_LINE:
-				sprintf(temp, "┴");
-				strcat(out_buff, temp);
-				break;
-			default:
-				break;
-			}
-			continue;
-		}
-		sprintf(temp, "─");
-		strcat(out_buff, temp);
-	}
-
-	switch (flag)
-	{
-	case FIRST_LINE:
-		sprintf(temp, "┐");
-		strcat(out_buff, temp);
-		break;
-	case NORMAL_LINE:
-		sprintf(temp, "┤");
-		strcat(out_buff, temp);
-		break;
-	case LAST_LINE:
-		sprintf(temp, "┘");
-		strcat(out_buff, temp);
-		break;
-	default:
-		break;
 	}
 
 	sprintf(temp, "%s\n", g_vt_clear_line);
@@ -474,7 +403,11 @@ int monitor(struct options_setting *setting)
 			printf("Monitor needs at least %d width to show power data!%s\n", len_min + 1, g_vt_clear_line);
 			printf("Now terminal width is: %d%s\n", available_width, g_vt_clear_line);
 			printf("%s", g_vt_clear_remain);
+#ifdef _WIN32
+			Sleep(100);
+#else
 			usleep(1000 * 100);
+#endif
 			continue;
 		}
 		if (available_height < power_val.rail_num + power_val.group_num + 14 + 1)
@@ -484,7 +417,11 @@ int monitor(struct options_setting *setting)
 			printf("Monitor needs at least %d height to show power data!%s\n", power_val.rail_num + power_val.group_num + 14 + 1, g_vt_clear_line);
 			printf("Now terminal height is: %d%s\n", available_height, g_vt_clear_line);
 			printf("%s", g_vt_clear_remain);
+#ifdef _WIN32
+			Sleep(100);
+#else
 			usleep(1000 * 100);
+#endif
 			continue;
 		}
 		col_len.available_width = available_width;
@@ -495,17 +432,17 @@ int monitor(struct options_setting *setting)
 		{
 			display_line(&col_len, FIRST_LINE, TABLE_RAIL, output_buff);
 			//header first line
-			sprintf(temp, "│ │ ");
+			sprintf(temp, "| | ");
 			strcat(output_buff, temp);
 			PRINTF_MIDDLE(temp, "Rail Name", LEN_RAIL_NAME / 2);
 			strcat(output_buff, temp);
-			sprintf(temp, " │ ");
+			sprintf(temp, " | ");
 			strcat(output_buff, temp);
 			if (available_width > len_all)
 			{
 				PRINTF_MIDDLE(temp, "Voltage(V)", LEN_RAIL_V * 2);
 				strcat(output_buff, temp);
-				sprintf(temp, " │ ");
+				sprintf(temp, " | ");
 				strcat(output_buff, temp);
 			}
 			if (available_width > len_middle)
@@ -519,7 +456,7 @@ int monitor(struct options_setting *setting)
 				} else
 					PRINTF_MIDDLE(temp, "Current(uA)", LEN_RAIL_C * 2);
 				strcat(output_buff, temp);
-				sprintf(temp, " │ ");
+				sprintf(temp, " | ");
 				strcat(output_buff, temp);
 			}
 			if (power_val.range_ctrl == MONITOR_RANGE_MA)
@@ -531,44 +468,44 @@ int monitor(struct options_setting *setting)
 				} else
 					PRINTF_MIDDLE(temp, "Power(uWatt)", LEN_RAIL_P * 2);
 			strcat(output_buff, temp);
-			sprintf(temp, " │ ");
+			sprintf(temp, " | ");
 			strcat(output_buff, temp);
 			PRINTF_MIDDLE(temp, "C-Range Ctrl(mA)", (LEN_RANGE_1 + LEN_RANGE_2 + 6) / 2);
 			strcat(output_buff, temp);
-			sprintf(temp, " │%s\n", g_vt_clear_line);
+			sprintf(temp, " |%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
 
 			//header second line
-			sprintf(temp, "│ │ ");
+			sprintf(temp, "| | ");
 			strcat(output_buff, temp);
-			sprintf(temp, "%*s │ ", LEN_RAIL_NAME, "");
+			sprintf(temp, "%*s | ", LEN_RAIL_NAME, "");
 			strcat(output_buff, temp);
 			if (available_width > len_all)
 			{
-				sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_V, "now", LEN_RAIL_V, "avg", LEN_RAIL_V, "max", LEN_RAIL_V, "min");
+				sprintf(temp, "%*s%*s%*s%*s | ", LEN_RAIL_V, "now", LEN_RAIL_V, "avg", LEN_RAIL_V, "max", LEN_RAIL_V, "min");
 				strcat(output_buff, temp);
 			}
 			if (available_width > len_middle)
 			{
-				sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_C, "now", LEN_RAIL_C, setting->use_rms ? "rms" : "avg", LEN_RAIL_C, "max", LEN_RAIL_C, "min");
+				sprintf(temp, "%*s%*s%*s%*s | ", LEN_RAIL_C, "now", LEN_RAIL_C, setting->use_rms ? "rms" : "avg", LEN_RAIL_C, "max", LEN_RAIL_C, "min");
 				strcat(output_buff, temp);
 			}
-			sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
+			sprintf(temp, "%*s%*s%*s%*s | ", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
 			strcat(output_buff, temp);
 			sprintf(temp, "%-*s%-*s", LEN_RANGE_1 + 3, "Range1", LEN_RANGE_2 + 3, "Range2");
 			strcat(output_buff, temp);
-			sprintf(temp, " │%s\n", g_vt_clear_line);
+			sprintf(temp, " |%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
 			display_line(&col_len, NORMAL_LINE, TABLE_RAIL, output_buff);
 
 			for (int i = 0; i < power_val.rail_num; i++)
 			{
 				if (i < 26)
-					sprintf(temp, "│%c│ ", i + 'A');
+					sprintf(temp, "|%c| ", i + 'A');
 				else
-					sprintf(temp, "│%c│ ", i + 'a' - 26);
+					sprintf(temp, "|%c| ", i + 'a' - 26);
 				strcat(output_buff, temp);
-				sprintf(temp, "%-*s │ ", LEN_RAIL_NAME, power_val.rail_infos[i].rail_name);
+				sprintf(temp, "%-*s | ", LEN_RAIL_NAME, power_val.rail_infos[i].rail_name);
 				strcat(output_buff, temp);
 				if (available_width > len_all) {
 					sprintf(temp, "%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_now);
@@ -579,7 +516,7 @@ int monitor(struct options_setting *setting)
 					strcat(output_buff, temp);
 					sprintf(temp, "%*.2f", LEN_RAIL_V, power_val.rail_infos[i].v_min);
 					strcat(output_buff, temp);
-					sprintf(temp, " │ ");
+					sprintf(temp, " | ");
 					strcat(output_buff, temp);
 				}
 				if (available_width > len_middle) {
@@ -599,7 +536,7 @@ int monitor(struct options_setting *setting)
 						sprintf(temp, "%s", g_vt_back_default);
 						strcat(output_buff, temp);
 					}
-					sprintf(temp, " │ ");
+					sprintf(temp, " | ");
 					strcat(output_buff, temp);
 				}
 				if (power_val.rail_infos[i].range_level && power_val.range_ctrl == MONITOR_RANGE_AUTO) {
@@ -618,7 +555,7 @@ int monitor(struct options_setting *setting)
 					sprintf(temp, "%s", g_vt_back_default);
 					strcat(output_buff, temp);
 				}
-				sprintf(temp, " │ ");
+				sprintf(temp, " | ");
 				strcat(output_buff, temp);
 				sprintf(temp, "[%c]%-*.1f", power_val.rail_infos[i].range_switch ? '*' : ' ', LEN_RANGE_1, power_val.rail_infos[i].range_list[0]);
 				strcat(output_buff, temp);
@@ -627,30 +564,30 @@ int monitor(struct options_setting *setting)
 				else
 					sprintf(temp, "   %*s", LEN_RANGE_2, "");
 				strcat(output_buff, temp);
-				sprintf(temp, " │%s\n", g_vt_clear_line);
+				sprintf(temp, " |%s\n", g_vt_clear_line);
 				strcat(output_buff, temp);
 			}
 			display_line(&col_len, LAST_LINE, TABLE_RAIL, output_buff);
 
 			//display group table
 			display_line(&col_len, FIRST_LINE, TABLE_GROUP, output_buff);
-			sprintf(temp, "│ ");
+			sprintf(temp, "| ");
 			strcat(output_buff, temp);
 			PRINTF_MIDDLE(temp, "Group Name", LEN_RAIL_NAME / 2);
 			strcat(output_buff, temp);
-			sprintf(temp, " │ ");
+			sprintf(temp, " | ");
 			strcat(output_buff, temp);
 			PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_GROUP_P * 2);
 			strcat(output_buff, temp);
-			sprintf(temp, " │%s\n", g_vt_clear_line);
+			sprintf(temp, " |%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
-			sprintf(temp, "│ %-*s │ %*s%*s%*s%*s │%s\n", LEN_RAIL_NAME, "",
+			sprintf(temp, "| %-*s | %*s%*s%*s%*s |%s\n", LEN_RAIL_NAME, "",
 			LEN_GROUP_P, "now", LEN_GROUP_P, "avg", LEN_GROUP_P, "max", LEN_GROUP_P, "min", g_vt_clear_line);
 			strcat(output_buff, temp);
 			display_line(&col_len, NORMAL_LINE, TABLE_GROUP, output_buff);
 			for (int i = 0; i < power_val.group_num; i++)
 			{
-				sprintf(temp, "│ %-*s │ ", LEN_RAIL_NAME, power_val.group_infos[i].group_name);
+				sprintf(temp, "| %-*s | ", LEN_RAIL_NAME, power_val.group_infos[i].group_name);
 				strcat(output_buff, temp);
 				sprintf(temp, "%*.2f", LEN_GROUP_P, power_val.group_infos[i].p_now);
 				strcat(output_buff, temp);
@@ -660,7 +597,7 @@ int monitor(struct options_setting *setting)
 				strcat(output_buff, temp);
 				sprintf(temp, "%*.2f", LEN_GROUP_P, power_val.group_infos[i].p_min);
 				strcat(output_buff, temp);
-				sprintf(temp, " │%s\n", g_vt_clear_line);
+				sprintf(temp, " |%s\n", g_vt_clear_line);
 				strcat(output_buff, temp);
 			}
 			display_line(&col_len, LAST_LINE, TABLE_GROUP, output_buff);
@@ -715,7 +652,11 @@ int monitor(struct options_setting *setting)
 		else
 			LEN_RAIL_C = LEN_RAIL_P = 11;
 
+#ifdef _WIN32
+		Sleep(setting->refreshms);
+#else
 		usleep(1000 * setting->refreshms);
+#endif
 	}
 
 	ret = bcu_monitor_unperpare(setting);
