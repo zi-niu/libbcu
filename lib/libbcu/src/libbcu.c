@@ -1596,6 +1596,9 @@ void *bcu_monitor(void *threadarg)
 					m_td->monitor_powers.rail_infos[rail_number].range_level = 1;
 				else
 					m_td->monitor_powers.rail_infos[rail_number].range_level = 0;
+				m_td->monitor_powers.rail_infos[rail_number].range_switch = sr_level[k];
+				m_td->monitor_powers.rail_infos[rail_number].range_list[0] = sr_level[k] ? cur_range[k] : unused_range[k];
+				m_td->monitor_powers.rail_infos[rail_number].range_list[1] = sr_level[k] ? unused_range[k] : cur_range[k];
 				m_td->monitor_powers.rail_infos[rail_number].v_now = vnow[k];
 				m_td->monitor_powers.rail_infos[rail_number].v_avg = vavg[k];
 				m_td->monitor_powers.rail_infos[rail_number].v_min = vmin[k];

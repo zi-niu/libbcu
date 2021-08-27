@@ -251,6 +251,8 @@ int LEN_RAIL_V =  6;
 int LEN_RAIL_C =  8;
 int LEN_RAIL_P =  8;
 int LEN_GROUP_P =  8;
+int LEN_RANGE_1 =  8;
+int LEN_RANGE_2 =  6;
 
 struct display_colum_len
 {
@@ -260,6 +262,7 @@ struct display_colum_len
 	int len_c;
 	int len_p;
 	int len_g_p;
+	int len_range;
 	int available_width;
 };
 
@@ -273,9 +276,9 @@ void display_line(struct display_colum_len *col_len, int flag, int table, char *
 
 	if (table == TABLE_RAIL)
 	{
-		len_all = col_len->hot_key + col_len->len_name + col_len->len_v + col_len->len_c + col_len->len_p;
-		len_middle = col_len->hot_key + col_len->len_name + col_len->len_c + col_len->len_p;
-		len_min = col_len->hot_key + col_len->len_name + col_len->len_p;
+		len_all = col_len->hot_key + col_len->len_name + col_len->len_v + col_len->len_c + col_len->len_p + col_len->len_range;
+		len_middle = col_len->hot_key + col_len->len_name + col_len->len_c + col_len->len_p + col_len->len_range;
+		len_min = col_len->hot_key + col_len->len_name + col_len->len_p + col_len->len_range;
 	} else if (table == TABLE_GROUP)
 	{
 		len_min = col_len->len_name + col_len->len_g_p;
@@ -312,15 +315,18 @@ void display_line(struct display_colum_len *col_len, int flag, int table, char *
 	for (int i = 1; i < len_need - 1; i++)
 	{
 		if (
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_name - col_len->len_v - col_len->len_c - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_v - col_len->len_c - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_c - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_name - col_len->len_c - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_c - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_p)) ||
-			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_p)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_name - col_len->len_v - col_len->len_c - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_v - col_len->len_c - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_c - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_all && i == (len_need - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_name - col_len->len_c - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_c - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_middle && i == (len_need - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_p - col_len->len_range)) ||
+			(table == TABLE_RAIL && len_need == len_min && i == (len_need - col_len->len_range)) ||
 			(table == TABLE_GROUP && len_need == len_min && i == (len_need - col_len->len_name - col_len->len_g_p)) ||
 			(table == TABLE_GROUP && len_need == len_min && i == (len_need - col_len->len_g_p))
 		)
@@ -452,11 +458,12 @@ int monitor(struct options_setting *setting)
 		col_len.len_name = 1 + LEN_RAIL_NAME + 2;
 		col_len.len_v = 1 + LEN_RAIL_V * 4 + 2;
 		col_len.len_c = 1 + LEN_RAIL_C * 4 + 2;
-		col_len.len_p = 1 + LEN_RAIL_P * 4 + 3;
+		col_len.len_p = 1 + LEN_RAIL_P * 4 + 2;
+		col_len.len_range = 1 + 3 + LEN_RANGE_1 + 3 + LEN_RANGE_2 + 3;
 		col_len.len_g_p = 1 + LEN_GROUP_P * 4 + 3;
-		int len_all = col_len.hot_key + col_len.len_name + col_len.len_v + col_len.len_c + col_len.len_p;
-		int len_middle = col_len.hot_key + col_len.len_name + col_len.len_c + col_len.len_p;
-		int len_min = col_len.hot_key + col_len.len_name + col_len.len_p;
+		int len_all = col_len.hot_key + col_len.len_name + col_len.len_v + col_len.len_c + col_len.len_p + col_len.len_range;
+		int len_middle = col_len.hot_key + col_len.len_name + col_len.len_c + col_len.len_p + col_len.len_range;
+		int len_min = col_len.hot_key + col_len.len_name + col_len.len_p + col_len.len_range;
 		int max_length, location_length, available_width, available_height;
 		available_width = monitor_size(GET_COLUMN);
 		available_height = monitor_size(GET_ROW);
@@ -475,7 +482,7 @@ int monitor(struct options_setting *setting)
 			printf("%s", g_vt_home);
 			printf("The terminal size is too small!%s\n", g_vt_clear_line);
 			printf("Monitor needs at least %d height to show power data!%s\n", power_val.rail_num + power_val.group_num + 14 + 1, g_vt_clear_line);
-			printf("Now terminal width is: %d%s\n", available_height, g_vt_clear_line);
+			printf("Now terminal height is: %d%s\n", available_height, g_vt_clear_line);
 			printf("%s", g_vt_clear_remain);
 			usleep(1000 * 100);
 			continue;
@@ -524,6 +531,10 @@ int monitor(struct options_setting *setting)
 				} else
 					PRINTF_MIDDLE(temp, "Power(uWatt)", LEN_RAIL_P * 2);
 			strcat(output_buff, temp);
+			sprintf(temp, " │ ");
+			strcat(output_buff, temp);
+			PRINTF_MIDDLE(temp, "C-Range Ctrl(mA)", (LEN_RANGE_1 + LEN_RANGE_2 + 6) / 2);
+			strcat(output_buff, temp);
 			sprintf(temp, " │%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
 
@@ -542,7 +553,9 @@ int monitor(struct options_setting *setting)
 				sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_C, "now", LEN_RAIL_C, setting->use_rms ? "rms" : "avg", LEN_RAIL_C, "max", LEN_RAIL_C, "min");
 				strcat(output_buff, temp);
 			}
-			sprintf(temp, "%*s%*s%*s%*s", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
+			sprintf(temp, "%*s%*s%*s%*s │ ", LEN_RAIL_P, "now", LEN_RAIL_P, "avg", LEN_RAIL_P, "max", LEN_RAIL_P, "min");
+			strcat(output_buff, temp);
+			sprintf(temp, "%-*s%-*s", LEN_RANGE_1 + 3, "Range1", LEN_RANGE_2 + 3, "Range2");
 			strcat(output_buff, temp);
 			sprintf(temp, " │%s\n", g_vt_clear_line);
 			strcat(output_buff, temp);
@@ -605,6 +618,15 @@ int monitor(struct options_setting *setting)
 					sprintf(temp, "%s", g_vt_back_default);
 					strcat(output_buff, temp);
 				}
+				sprintf(temp, " │ ");
+				strcat(output_buff, temp);
+				sprintf(temp, "[%c]%-*.1f", power_val.rail_infos[i].range_switch ? '*' : ' ', LEN_RANGE_1, power_val.rail_infos[i].range_list[0]);
+				strcat(output_buff, temp);
+				if (power_val.rail_infos[i].range_switch >= 0)
+					sprintf(temp, "[%c]%-*.1f", power_val.rail_infos[i].range_switch ? ' ' : '*', LEN_RANGE_2, power_val.rail_infos[i].range_list[1]);
+				else
+					sprintf(temp, "   %*s", LEN_RANGE_2, "");
+				strcat(output_buff, temp);
 				sprintf(temp, " │%s\n", g_vt_clear_line);
 				strcat(output_buff, temp);
 			}

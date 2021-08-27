@@ -54,6 +54,7 @@
 #define MONITOR_RANGE_MA	0
 #define MONITOR_RANGE_AUTO	1
 #define MONITOR_RANGE_UA	2
+#define MONITOR_RANGE_LIST_NUM	2
 
 #define LSBOOTMODE_NSHOWID	0
 #define LSBOOTMODE_SHOWID	1
@@ -136,6 +137,8 @@ struct options_setting {
 typedef struct monitor_rail_power {
 	char rail_name[MAX_MAPPING_NAME_LENGTH];
 	int range_level;
+	int range_switch;
+	double range_list[MONITOR_RANGE_LIST_NUM];
 	double v_now;
 	double v_avg;
 	double v_min;
