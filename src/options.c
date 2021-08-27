@@ -118,6 +118,7 @@ const struct command_opt bcu_commands[] =
 	{"init",		{op_bootmode, op_auto, op_board, op_id, op_debug}},
 	{"deinit",		{op_bootmode, op_auto, op_board, op_id, op_debug}},
 	{"monitor",		{op_auto, op_board, op_id, op_dump, op_nodisplay, op_pmt, op_stats, op_rms, op_hz, op_hwfilter, op_unipolar, op_debug}},
+	{"server",		{op_auto, op_board, op_id, op_dump, op_stats, op_rms, op_hwfilter, op_unipolar, op_debug}},
 	{"eeprom",		{op_board, op_id, op_write, op_write_sn, op_set_sn, op_set_brev, op_set_srev, op_read, op_erase, op_debug}},
 	{"gpio",		{op_auto, op_board, op_id, op_gpioname, op_set, op_get, op_debug}},
 	{"bootmode",		{op_bootmode, op_auto, op_board, op_id, op_boothex, op_bootbin, op_set, op_get, op_debug}},

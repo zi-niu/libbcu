@@ -376,8 +376,10 @@ int monitor(struct options_setting *setting)
 	while(!GV_MONITOR_TERMINATED && !(bcu_monitor_is_stop()))
 	{
 		ret = bcu_monitor_getvalue(setting, &power_val);
-		if (ret)
+		if (ret) {
 			printf("%s", bcu_get_err_str(ret));
+			break;
+		}
 
 		if (!power_val.rail_num)
 			continue;
@@ -669,6 +671,244 @@ int monitor(struct options_setting *setting)
 	return 0;
 }
 
+#if defined(linux) || defined(__APPLE__)
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#endif
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#endif
+
+#define PORT 65432
+
+char *iso8601(char *local_time)
+{
+	time_t t_time;
+	struct tm *t_tm;
+ 
+	t_time = time(NULL);
+	t_tm = localtime(&t_time);
+	if (t_tm == NULL)
+		return NULL;
+ 
+	if (strftime(local_time, 32, "%FT%T%z", t_tm) == 0)
+		return NULL;
+
+	local_time[25] = local_time[24];
+	local_time[24] = local_time[23];
+	local_time[22] = ':';
+	local_time[26] = '\0';
+	return local_time;
+}
+
+int server(struct options_setting *setting)
+{
+	signal(SIGINT, handle_sigint);
+	int ret;
+	powers power_val;
+
+	int serverSocket;
+
+	struct sockaddr_in server_addr;
+	struct sockaddr_in clientAddr;
+	int addr_len = sizeof(clientAddr);
+	int client;
+	char sendbuf[4096] = { 0 };
+	char recvbuf[4096] = { 0 };
+	int iDataNum;
+	char logtime[32] = { 0 };
+	int accepted;
+
+	#ifdef _WIN32
+	WSADATA wsaData;
+	unsigned long ul = 1;
+	// Initialize Winsock
+	ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (ret != 0) {
+		printf("WSAStartup failed with error: %d\n", ret);
+		return 1;
+	}
+#endif
+
+	serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+#ifdef _WIN32
+	if (serverSocket == INVALID_SOCKET)
+	{
+		printf("socket failed with error: %ld\n", WSAGetLastError());
+		WSACleanup();
+#else
+	if (serverSocket < 0)
+	{
+		perror("socket");
+#endif
+		return -1;
+	}
+
+#ifdef _WIN32
+	ret = ioctlsocket(serverSocket, FIONBIO, (unsigned long*)&ul);
+	if (ret == SOCKET_ERROR)
+	{
+		printf("ioctlsocket failed with error: %d\n", WSAGetLastError());
+		closesocket(serverSocket);
+		WSACleanup();
+		return -10;
+	}
+#endif
+
+	memset(&server_addr, 0, sizeof(server_addr));
+
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT);
+	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+	ret = bind(serverSocket, (struct sockaddr*)&server_addr, sizeof(server_addr));
+#ifdef _WIN32
+	if (ret == SOCKET_ERROR)
+	{
+		printf("bind failed with error: %d\n", WSAGetLastError());
+		closesocket(serverSocket);
+		WSACleanup();
+#else
+	if (ret < 0)
+	{
+		perror("connect");
+#endif
+		return -11;
+	}
+
+	ret = listen(serverSocket, 5);
+#ifdef _WIN32
+	if (ret == SOCKET_ERROR)
+	{
+		printf("listen failed with error: %d\n", WSAGetLastError());
+		closesocket(serverSocket);
+		WSACleanup();
+#else
+	if (ret < 0)
+	{
+		perror("listen");
+#endif
+		return -12;
+	}
+
+retry:
+	printf("[%s] listening Port %d on all IPs.\n", iso8601(logtime), PORT);
+	accepted = 0;
+	do {
+		client = accept(serverSocket, (struct sockaddr*)&clientAddr, (socklen_t*)&addr_len);
+#ifdef _WIN32
+		if (client == INVALID_SOCKET)
+		{
+			if (WSAGetLastError() != WSAEWOULDBLOCK)
+			{
+				printf("accept failed with error: %d\n", WSAGetLastError());
+				closesocket(serverSocket);
+				WSACleanup();
+				return -10;
+			}
+#else
+		if (client < 0)
+		{
+			perror("accept");
+			return -10;
+#endif
+		}
+		else
+		{
+			accepted = 1;
+		}
+	} while (!accepted);
+	printf("[%s] IP is %s\n", iso8601(logtime), inet_ntoa(clientAddr.sin_addr));
+	printf("[%s] Port is %d\n", iso8601(logtime), htons(clientAddr.sin_port));
+	printf("[%s] Start collecting data...\n", iso8601(logtime));
+	printf("[%s] Waiting request message...\n", iso8601(logtime));
+
+	memset(&power_val, 0, sizeof(power_val));
+
+	ret = bcu_monitor_perpare(setting);
+	if (ret < 0)
+	{
+		printf("%s", bcu_get_err_str(ret));
+		return ret;
+	}
+
+	while(!GV_MONITOR_TERMINATED && !(bcu_monitor_is_stop()))
+	{
+		ret = bcu_monitor_getvalue(setting, &power_val);
+		if (ret) {
+			printf("%s", bcu_get_err_str(ret));
+			break;
+		}
+
+		if (!power_val.rail_num)
+			continue;
+
+		iDataNum = recv(client, recvbuf, 1024, MSG_DONTWAIT);
+		if (iDataNum > 0)
+		{
+			// printf("Received data: [%s]\n", recvbuf);
+			if (strcmp(recvbuf, "data request") == 0)
+			{
+				printf("[%s] Data Request.\n", iso8601(logtime));
+				strcpy(sendbuf, "");
+
+				char time[32] = {0};
+				strcat(sendbuf, iso8601(time));
+				strcat(sendbuf, ";");
+
+				for (int i = 0; i < power_val.rail_num; i++)
+				{
+					strcat(sendbuf, power_val.rail_infos[i].rail_name);
+					strcat(sendbuf, ":");
+					char temp[20] = {0};
+					sprintf(temp, "%lf", power_val.rail_infos[i].p_avg);
+					strcat(sendbuf, temp);
+					strcat(sendbuf, ";");
+				}
+
+				send(client, sendbuf, strlen(sendbuf), 0);
+
+				bcu_monitor_set_hotkey('1');
+			}
+			else if (strcmp(recvbuf, "quit") == 0)
+			{
+				printf("[%s] Client requests to exit server monitor...\n", iso8601(logtime));
+				ret = 1;
+				break;
+			} else {
+				send(client, "Unsupported request!", strlen("unsupported request!"), 0);
+			}
+		} else if (iDataNum == 0){
+			printf("[%s] Client disconnects! Stop collecting data...\n", iso8601(logtime));
+			ret = 2;
+			ret = bcu_monitor_unperpare(setting);
+			if (ret < 0)
+			{
+				printf("%s", bcu_get_err_str(ret));
+				return ret;
+			}
+			goto retry;
+		}
+
+		memset(recvbuf, 0, sizeof recvbuf);
+	}
+
+	ret = bcu_monitor_unperpare(setting);
+	if (ret < 0)
+	{
+		printf("%s", bcu_get_err_str(ret));
+		return ret;
+	}
+
+#ifdef _WIN32
+	WSACleanup();
+#endif
+
+	return 0;
+}
+
 int lsftdi(struct options_setting *setting)
 {
 	char boardlist[MAX_NUMBER_OF_BOARD][MAX_MAPPING_NAME_LENGTH] = {0};
@@ -854,10 +1094,10 @@ int main(int argc, char **argv)
 	{
 		monitor(&setting);
 	}
-	// else if (strcmp(cmd, "server") == 0)
-	// {
-	// 	server_monitor(&setting);
-	// }
+	else if (strcmp(cmd, "server") == 0)
+	{
+		server(&setting);
+	}
 	else if (strcmp(cmd, "lsftdi") == 0)
 	{
 		lsftdi(&setting);
