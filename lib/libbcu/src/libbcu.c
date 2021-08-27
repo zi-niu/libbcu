@@ -1779,7 +1779,7 @@ void *bcu_monitor(void *threadarg)
 			}
 		}
 #ifdef _WIN32
-		WaitForSingleObject(m_td->mutex, INFINITE);
+		WaitForSingleObject(m_td->h_mutex, INFINITE);
 #else
 		pthread_mutex_lock(&m_td->mutex);
 #endif
