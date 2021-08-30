@@ -126,9 +126,7 @@ char *bcu_get_err_str(int err_num)
 		return "Success!\n";
 	case -LIBBCU_ERR_NO_THIS_BOARD:
 		return "\n<ERROR------cut------------------"
-		       "\nnot supported board model or missing option <--board=>\n\n"
-		       "Or use option <--auto> to find the board automatically\n"
-		       "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n"
+		       "\nNot supported board model!\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_BUILD_DEVICE_LINK:
 		return "\n<ERROR------cut------------------"
@@ -141,7 +139,6 @@ char *bcu_get_err_str(int err_num)
 	case -LIBBCU_ERR_NO_BOOT_MODE_OPT:
 		return "\n<ERROR------cut------------------"
 		       "\nNo boot mode provided!\n"
-		       "Please add <-m> or <--bootmode=> option.\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_NO_BOOT_MODE_CFG:
 		return "\n<ERROR------cut------------------"
@@ -176,9 +173,7 @@ char *bcu_get_err_str(int err_num)
 		       "\nBCU onoff executed failed!\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_BOOT_FROM_SWITCH:
-		return "\n<ERROR------cut------------------"
-		       "\nPin bootmode_sel is disabled, boot from BOOT SWITCH!\n"
-		       "------------end------------------>\n\n";
+		return "\nPin bootmode_sel is disabled, boot from BOOT SWITCH!\n";
 	case -LIBBCU_ERR_NO_REMOTE_EN:
 		return "\n<ERROR------cut------------------"
 		       "\nCannot find gpio remote_en!\n"
@@ -193,22 +188,20 @@ char *bcu_get_err_str(int err_num)
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_NO_GET_OR_SET:
 		return "\n<ERROR------cut------------------"
-		       "\nMissing option: <--get> or <--set>/<--set=>!\n"
+		       "\nMissing get/set related option!\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_NO_SET_VAL_OPT:
 		return "\n<ERROR------cut------------------"
-		       "\nMissing option: <--set=>\n"
-		       "Please enter a valid output state, 1 to set logic level high, 0 to set it low.\n"
+		       "\nMissing SET option!\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_INVALID_GPIO_NAME_OPT:
 		return "\n<ERROR------cut------------------\n"
 			"Could not detect a valid gpio name entered.\n"
-			"Please enter the name of the gpio pin by using option <-g>/<--gpioname=>.\n"
-			"To check a list of available gpio pin, please use command:\n  ./bcu lsgpio --board=xxx\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_FIND_GPIO_PATH:
 		return "\n<ERROR------cut------------------"
-		       "\nMissing option: <--get> or <--set>/<--set=>!\n"
+		       "\nFailed to find gpio path!\n"
+		       "Please check the provided gpio name and board name!\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_GET_GPIO_LEVEL:
 		return "\n<ERROR------cut------------------"
@@ -240,16 +233,16 @@ char *bcu_get_err_str(int err_num)
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_EEPROM_NO_OPT:
 		return "\n<ERROR------cut------------------"
-		       "\nMissing option: <-w>/<--write> or <-r>/<read>!\n"
+		       "\nMissing read/write option!\n"
 		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_UNSPPORTED_GPIO:
 		return "\n<ERROR------cut------------------"
 		       "\nThe GPIO name is unsupported!\n"
-		       "Please double check the GPIO name with command:\n"
-		       "./bcu lsgpio --board=xxx\n"
 		       "------------end------------------>\n\n";
-	
-	
+	case -LIBBCU_ERR_CREATE_MONITOR_THREAD:
+		return "\n<ERROR------cut------------------"
+		       "\nPthread_create monitor thread failed!\n"
+		       "------------end------------------>\n\n";
 	case -LIBBCU_ERR_MUTEX_LOCK_INIT:
 		return "\n<ERROR------cut------------------"
 		       "\nMutex lock init failed!\n"

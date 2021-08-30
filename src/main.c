@@ -59,6 +59,39 @@
 
 int GV_MONITOR_TERMINATED = 0;
 
+char *get_err_str(int err_num)
+{
+	char *err_str = NULL;
+	printf("%s", bcu_get_err_str(err_num));
+
+	switch (err_num)
+	{
+	case -LIBBCU_ERR_NO_THIS_BOARD:
+		err_str = "\nMissing option <--board=>\n\n"
+		       "Or use option <--auto> to find the board automatically\n"
+		       "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n";
+	case -LIBBCU_ERR_NO_BOOT_MODE_OPT:
+		err_str = "\nPlease add <-m> or <--bootmode=> option.\n";
+	case -LIBBCU_ERR_NO_GET_OR_SET:
+		err_str = "\nMissing option: <--get> or <--set>/<--set=>!\n";
+	case -LIBBCU_ERR_NO_SET_VAL_OPT:
+		err_str = "\nMissing option: <--set=>\n"
+		       "Please enter a valid output state, 1 to set logic level high, 0 to set it low.\n";
+	case -LIBBCU_ERR_INVALID_GPIO_NAME_OPT:
+		err_str = "\nPlease enter the name of the gpio pin by using option <-g>/<--gpioname=>.\n"
+		       "To check a list of available gpio pin, please use command:\n  ./bcu lsgpio --board=xxx\n";
+	case -LIBBCU_ERR_EEPROM_NO_OPT:
+		err_str = "\nMissing option: <-w>/<--write> or <-r>/<read>!\n";
+	case -LIBBCU_ERR_UNSPPORTED_GPIO:
+		err_str = "\nPlease double check the GPIO name with command:\n"
+		       "./bcu lsgpio --board=xxx\n";
+	default:
+		err_str = "";
+	}
+
+	printf("%s", err_str);
+}
+
 static int monitor_size(int columns_or_rows)
 {
 #ifdef _WIN32
