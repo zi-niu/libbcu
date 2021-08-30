@@ -1127,9 +1127,10 @@ void print_help(char *arg)
 
 int main(int argc, char **argv)
 {
-	if (strstr(argv[1], "bcu") != NULL)
-		if (auto_complete(argc, argv) == 0)
-			return 0;
+	if (argc > 1)
+		if (strstr(argv[1], "bcu") != NULL)
+			if (auto_complete(argc, argv) == 0)
+				return 0;
 
 	char* cmd = argv[1];
 	struct options_setting setting;
@@ -1142,7 +1143,7 @@ int main(int argc, char **argv)
 	switch (argc)
 	{
 	case 1:
-		// print_help(NULL);
+		print_help(NULL);
 		return 0;
 	case 2: 
 		if (strcmp(argv[1], "conf_path") == 0 || strcmp(argv[1], "-cp") == 0)
