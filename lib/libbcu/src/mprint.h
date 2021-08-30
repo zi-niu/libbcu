@@ -31,7 +31,6 @@
 #ifndef MPRINT_H
 #define MPRINT_H
 
-// #define GV_DEBUG_LEVEL 1
 extern int GV_DEBUG_LEVEL;
 #define mprintf(level, format, ...)			\
 {							\

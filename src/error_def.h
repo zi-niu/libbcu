@@ -33,6 +33,5 @@
 
 #define RET_OK				(0)
 #define ERR_OPT				(-1)
-#define ERR_NO_THIS_BOARD		(-2)
 
 #endif //BCU_ERROR_H
