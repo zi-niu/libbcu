@@ -40,5 +40,6 @@ struct command_opt {
 };
 
 int opt_parser(int argc, char **argv, struct options_setting *setting, char *cmd);
+int auto_complete(int argc, char **argv);
 
 #endif //BCU_OPTIONS_H

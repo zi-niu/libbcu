@@ -359,69 +359,64 @@ int opt_parser(int argc, char **argv, struct options_setting *setting, char *cmd
 	return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#define linux_auto_argd() linux_auto_arg(" ", "")
-
-void linux_auto_arg(const char *space, const char *filter)
+void linux_auto_arg_bcu_commands(const char *space)
 {
-	// char *str = filter;
-
-	const char *param[] = { "-b", "-d", "-v", "-V", "-s", NULL };
-	int i = 0;
-
-	for (int i = 0; param[i]; i++)
+	for (int i = 0; bcu_commands[i].cmd_name; i++)
 	{
-		printf("%s%s", param[i], space);
+		if (strstr(bcu_commands[i].cmd_name, "") != NULL)
+			printf("%s%s", bcu_commands[i].cmd_name, space);
 	}
+}
+
+void linux_auto_arg_long_options(char *command, char *filter)
+{
+	// if (filter != NULL)
+	// 	printf("cmd:%s,filter:%s ", command, filter);
+	// else
+	// 	printf("cmd:%s ", command);
+
+	// for (int i = 0; bcu_param[i]; i++)
+	// {
+	// 	printf("%s%s", bcu_param[i], space);
+	// }
+	for (int i = 0; bcu_commands[i].cmd_name; i++)
+	{
+		if (strcmp(bcu_commands[i].cmd_name, command) == 0)
+		{
+			for (int j = 0; bcu_commands[i].option_val[j] != 0; j++)
+			{
+				if (filter != NULL)
+				{
+					if (strncmp(long_options[bcu_commands[i].option_val[j] - 1].name, filter, strlen(filter)) == 0)
+					{
+						printf("--%s%s", long_options[bcu_commands[i].option_val[j] - 1].name, " ");
+					}
+				}
+				else
+					printf("--%s%s", long_options[bcu_commands[i].option_val[j] - 1].name, " ");
+			}
+			break;
+		}
+	}
+}
+
+void guess_command_opt(char* opt)
+{
+	char board_tmp[30] = "";
+	int findflag = 0;
+
+	strcpy(board_tmp, opt);
+	int i = 0;
+	while (bcu_commands[i].cmd_name != NULL)
+	{
+		// if (strstr(bcu_commands[i].cmd_name, board_tmp) != NULL)
+		if (strncmp(bcu_commands[i].cmd_name, board_tmp, strlen(opt)) == 0)
+		{
+			printf("%s ", bcu_commands[i].cmd_name);
+		}
+		i++;
+	}
+
 }
 
 int linux_autocomplete(int argc, char **argv)
@@ -429,49 +424,62 @@ int linux_autocomplete(int argc, char **argv)
 	char *last;
 	char *cur;
 
-	// printf("argc:%d", argc);
+	char temp[10] = { 0 };
+	strcpy(temp, argv[1]);
+
+	// if (argc == 3)
+	// {
+	// 	last = argv[2];
+	// }else
+	// {
+	// 	cur = argv[2];
+	// 	last = argv[3];
+	// }
+
+	// for (int i = 0; i < argc; i++)
+	// 	printf("argv[%d]:%s\n", i, argv[i]);
+	// printf("argc:%d\n", argc);
+
+	// if (strstr(last, "bcu") != NULL && !strlen(cur))
+	// {
+	// 	linux_auto_arg_bcu_commands(" ");
+	// 	return 0;
+	// }
 
 	if (argc == 3)
 	{
-		last = argv[2];
-	}else
-	{
-		cur = argv[2];
-		last = argv[3];
+		if (strstr(argv[2], "bcu") != NULL)
+			linux_auto_arg_bcu_commands(" ");
+		else if (argv[2][0] == '-')
+		{
+			if (!strcmp(&argv[2][2], "board"))
+			{
+				char boardlist[MAX_NUMBER_OF_BOARD][MAX_MAPPING_NAME_LENGTH] = {0};
+				int boardnum = 0;
+				boardnum = bcu_lsboard(boardlist);
+				for (int i = 0; i < boardnum; i++)
+				{
+					printf("%s ", boardlist[i]);
+				}
+			}
+		}
+		else
+			linux_auto_arg_long_options(argv[2], NULL);
+
 	}
 
-	// if (cur[0] == '-')
-	// {
-		// if (strlen(cur) == 1)
-			linux_auto_argd();
-		// else
-		// 	cout << cur << " " << endl;
+	if (argc == 4) {
+		if (argv[2][0] == '-')
+		{
+			linux_auto_arg_long_options(argv[3], &argv[2][2]);
+		}
+		else
+			guess_command_opt(argv[2]);
+	}
 
-		return 0;
-	// }
 
-	// if (last.size()>=3)
-	// {
-	// 	if (last.substr(last.size() - 3) == "uuu" &&(cur.empty() || cur[0] == '-'))
-	// 	{
-	// 		linux_auto_arg();
-	// 		cout << cur << endl;
-	// 	}
 
-	// }else if(last.empty())
-	// {
-	// 	linux_auto_arg();
-	// }
-	// else if (last == "-b")
-	// {
-	// 	return g_BuildScripts.PrintAutoComplete(cur);
-
-	// }else if(last[0] == '-')
-	// {
-	// 	linux_auto_arg();
-	// }
-
-	// uuu_for_each_ls_file(linux_autocomplete_ls, cur.c_str(), NULL);
+	return 0;
 }
 
 int auto_complete(int argc, char **argv)

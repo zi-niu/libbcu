@@ -1078,8 +1078,9 @@ void terminateBCU(void)
 
 int main(int argc, char **argv)
 {
-	// if (auto_complete(argc, argv) == 0)
-	// 	return 0;
+	if (strstr(argv[1], "bcu") != NULL)
+		if (auto_complete(argc, argv) == 0)
+			return 0;
 
 	char* cmd = argv[1];
 	struct options_setting setting;
