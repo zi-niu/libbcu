@@ -1076,6 +1076,55 @@ void terminateBCU(void)
 	bcu_remove_all_ftdi_port();
 }
 
+
+
+void print_help(char *arg)
+{
+	printf("Usage: <COMMAND> [-m:ab:i:d::nwrg:vhc]\n");
+	printf("  Support commands:\n");
+	printf("    reset      reset the board, and then boot from BOOTMODE_NAME\n"
+	       "               or the boot mode value set by [--boothex=] [--bootbin=]\n");
+	print_opt("reset");
+
+	printf("    onoff      press the ON/OFF button once for -hold= time(ms)\n");
+	print_opt("onoff");
+
+	printf("    init       enable the remote control with a boot mode\n");
+	print_opt("init");
+
+	printf("    deinit     disable the remote control\n");
+	print_opt("deinit");
+
+	printf("    monitor    monitor power consumption\n");
+	print_opt("monitor");
+
+	printf("    server     monitor power consumption over TCP/IP server\n");
+	print_opt("server");
+
+	printf("    eeprom     EEPROM read and program\n");
+	print_opt("eeprom");
+
+	printf("    gpio       set/get level state of pin GPIO_NAME\n");
+	print_opt("gpio");
+
+	printf("    bootmode   set/get the boot mode\n");
+	print_opt("bootmode");
+
+	printf("    lsftdi     list all boards connected by ftdi device\n");
+	print_opt("lsftdi");
+
+	printf("    lsboard    list all supported board models\n");
+	printf("\n");
+	// print_opt("lsboard");
+
+	printf("    lsbootmode show a list of available BOOTMODE_NAME of a board\n");
+	print_opt("lsbootmode");
+
+	printf("    lsgpio     show a list of available GPIO_NAME of a board\n");
+	print_opt("lsgpio");
+
+}
+
 int main(int argc, char **argv)
 {
 	if (strstr(argv[1], "bcu") != NULL)
@@ -1100,8 +1149,14 @@ int main(int argc, char **argv)
 		{
 			printf("\nBCU Config file path: %s\n\n", yamfile);
 			return 0;
+		} else if (strcmp(cmd, "help") == 0)
+		{
+			if (argc == 2)
+				print_help(NULL);
+			if (argc == 3)
+				print_help(argv[2]);
 		}
-		break;
+		return 0;
 	default:
 		break;
 	}
@@ -1153,13 +1208,6 @@ int main(int argc, char **argv)
 	{
 		ret = bootmode(&setting);
 	}
-	// else if (strcmp(cmd, "help") == 0)
-	// {
-	// 	if (argc == 2)
-	// 		print_help(NULL);
-	// 	if (argc == 3)
-	// 		print_help(argv[2]);
-	// }
 	else if (strcmp(cmd, "eeprom") == 0)
 	{
 		ret = eeprom(&setting);

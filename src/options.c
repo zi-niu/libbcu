@@ -41,8 +41,6 @@
 
 int lopt;
 const char *optstring = "m:ab:i:d::nwrg:vhc";
-const char *bcu_param[] = { "-m", "-a", "-b", "-i", "-d", "-n",
-			    "-w", "-r", "-g", "-v", "-h", "-c", NULL };
 
 enum options
 {
@@ -76,6 +74,13 @@ enum options
 	op_config_path,
 	op_debug
 };
+
+const char *bcu_param[] = {  "-m",	"-a",	"-b",	"-i",	"",
+			     "",	"",	"-d",	"-h",	"",
+			     "",	"",	"",	"",	"",
+			     "-w",	"",	"",	"",	"",
+			     "-r",	"",	"-g",	"",	"",
+			     "-v",	"-h",	"-c",	"",	"", NULL};
 
 const struct option long_options[] =
 {
@@ -128,6 +133,28 @@ const struct command_opt bcu_commands[] =
 	{"lsgpio",		{op_auto, op_board, op_debug}},
 	{NULL,			{0}}
 };
+
+void print_opt(char *cmd)
+{
+	for (int i = 0; bcu_commands[i].cmd_name; i++)
+	{
+		if (!strcmp(bcu_commands[i].cmd_name, cmd))
+		{
+			printf("               Options:\n");
+			printf("               ");
+			for (int j = 0; bcu_commands[i].option_val[j] != 0; j++)
+			{
+				printf("--%s", long_options[bcu_commands[i].option_val[j] - 1].name);
+				if (long_options[bcu_commands[i].option_val[j] - 1].has_arg)
+					printf("=");
+				if (strlen(bcu_param[bcu_commands[i].option_val[j] - 1]))
+					printf("/%s", bcu_param[bcu_commands[i].option_val[j] - 1]);
+				printf("    ");
+			}
+			printf("\n\n");
+		}
+	}
+}
 
 int is_opt_supported(char *command_str, int opt)
 {
