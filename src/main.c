@@ -692,12 +692,15 @@ int monitor(struct options_setting *setting)
 			bcu_monitor_set_hotkey(ch);
 
 		int ms_each_sample = (power_val.time_now - power_val.time_start) / power_val.sample_times;
+		int ms_delay;
 		if (setting->refreshms < ms_each_sample)
-			setting->refreshms = ms_each_sample;
+			ms_delay = ms_each_sample;
+		else
+			ms_delay = setting->refreshms;
 #ifdef _WIN32
-		Sleep(setting->refreshms);
+		Sleep(ms_delay);
 #else
-		usleep(1000 * setting->refreshms);
+		usleep(1000 * ms_delay);
 #endif
 	}
 
