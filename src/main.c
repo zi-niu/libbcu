@@ -369,7 +369,7 @@ static int kb_hit()
 
 static char catch_input_char()
 {
-	char ch = ' ';
+	char ch = -1;
 	if (kb_hit())
 	{
 #ifdef _WIN32
@@ -417,6 +417,13 @@ int monitor(struct options_setting *setting)
 
 		if (!power_val.rail_num)
 			continue;
+
+		if (power_val.range_ctrl == MONITOR_RANGE_MA)
+			LEN_RAIL_C = LEN_RAIL_P = 8;
+		else if (power_val.range_ctrl == MONITOR_RANGE_AUTO)
+			LEN_RAIL_C = LEN_RAIL_P = 11;
+		else
+			LEN_RAIL_C = LEN_RAIL_P = 11;
 
 		struct display_colum_len col_len;
 		col_len.hot_key = 2;
@@ -680,14 +687,13 @@ int monitor(struct options_setting *setting)
 		printf("%s", output_buff);
 		printf("%s", g_vt_clear_remain);
 
-		bcu_monitor_set_hotkey(catch_input_char());
-		if (power_val.range_ctrl == MONITOR_RANGE_MA)
-			LEN_RAIL_C = LEN_RAIL_P = 8;
-		else if (power_val.range_ctrl == MONITOR_RANGE_AUTO)
-			LEN_RAIL_C = LEN_RAIL_P = 11;
-		else
-			LEN_RAIL_C = LEN_RAIL_P = 11;
+		char ch = catch_input_char();
+		if (ch > 0)
+			bcu_monitor_set_hotkey(ch);
 
+		int ms_each_sample = (power_val.time_now - power_val.time_start) / power_val.sample_times;
+		if (setting->refreshms < ms_each_sample)
+			setting->refreshms = ms_each_sample;
 #ifdef _WIN32
 		Sleep(setting->refreshms);
 #else
