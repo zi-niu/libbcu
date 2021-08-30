@@ -468,7 +468,7 @@ int bcu_eeprom_checkboard(struct eeprom_device* eeprom, struct ftdi_eeprom_user_
 		return status;
 
 	if (board_id != eeprom_data->board_id)
-		return -1;
+		return -22;
 
 	status = bcu_ftdi_eeprom_read_code(eeprom, ftdi_eeprom_board_rev, board_rev);
 	if (status)

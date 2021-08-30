@@ -639,6 +639,34 @@ int have_gpio(char* gpio_name, struct board_info *board)
 	return -1;
 }
 
+
+void guess_board_name(char* board_name)
+{
+	char board_tmp[30] = "";
+	int findflag = 0;
+
+	strcpy(board_tmp, board_name);
+	for (int j = 0; j < strlen(board_name); j++)
+	{
+		board_tmp[strlen(board_tmp) - j] = 0;
+		for (int i = 0; i < num_of_boards; i++)
+		{
+			if (strstr(board_list[i].name, board_tmp) != NULL)
+			{
+				if (!findflag)
+				{
+					findflag = 1;
+					mprintf(1, "do you mean: ");
+				}
+				mprintf(1, "%s ", board_list[i].name);
+			}
+		}
+		if (findflag)
+			break;
+	}
+	mprintf(1, "\n");
+}
+
 struct board_info *get_board(char* board_name)
 {
 	if (strlen(board_name) == 0)
@@ -658,34 +686,9 @@ struct board_info *get_board(char* board_name)
 	}
 	mprintf(3, "board model %s is not supported\n", board_name);
 
+	guess_board_name(board_name);
+
 	return NULL;
-}
-
-void guess_board_name(char* board_name, char boardnamelist[][MAX_MAPPING_NAME_LENGTH])
-{
-	char board_tmp[30] = "";
-	int findflag = 0;
-
-	strcpy(board_tmp, board_name);
-	for (int j = 0; j < strlen(board_name); j++)
-	{
-		board_tmp[strlen(board_tmp) - j] = 0;
-		for (int i = 0; i < num_of_boards; i++)
-		{
-			if (strstr(board_list[i].name, board_tmp) != NULL)
-			{
-				if (!findflag)
-				{
-					findflag = 1;
-					mprintf(3, ", do you mean:\n\n\t");
-				}
-				mprintf(3, "%s ", board_list[i].name);
-			}
-		}
-		if (findflag)
-			break;
-	}
-	mprintf(3, "\n");
 }
 
 

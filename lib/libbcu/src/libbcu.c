@@ -119,168 +119,182 @@ int find_board_by_eeprom(char *boardname, int *boardnum)
 char *bcu_get_err_str(int err_num)
 {
 	if (err_num)
-		mprintf(2, "\nraw error code: %d\n", err_num);
+		mprintf(2, "raw error code: %d\n", err_num);
 	switch (err_num)
 	{
 	case 0:
 		return "Success!\n";
 	case -LIBBCU_ERR_NO_THIS_BOARD:
-		return "\n<ERROR------cut------------------"
-		       "\nNot supported board model!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Not supported board model!"
+		       "------>\n";
 	case -LIBBCU_ERR_BUILD_DEVICE_LINK:
-		return "\n<ERROR------cut------------------"
-		       "\nBuilding device linked list failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Building device linked list failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_OPEN_FTDI_CHANNEL:
-		return "\n<ERROR------cut------------------"
-		       "\nCan't open FTDI channel!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Can't open FTDI channel!"
+		       "------>\n";
 	case -LIBBCU_ERR_NO_BOOT_MODE_OPT:
-		return "\n<ERROR------cut------------------"
-		       "\nNo boot mode provided!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "No boot mode provided!"
+		       "------>\n";
 	case -LIBBCU_ERR_NO_BOOT_MODE_CFG:
-		return "\n<ERROR------cut------------------"
-		       "\nNo boot_mode configuration!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "No boot_mode configuration!"
+		       "------>\n";
 	case -LIBBCU_ERR_NO_BOOT_CFG_CFG:
-		return "\n<ERROR------cut------------------"
-		       "\nNo boot_cfg configuration!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "No boot_cfg configuration!"
+		       "------>\n";
 	case -LIBBCU_ERR_BOOT_MODE_OFFSET:
-		return "\n<ERROR------cut------------------"
-		       "\nSomething is wrong with the pin bitmask!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Something is wrong with the pin bitmask!"
+		       "------>\n";
 	case -LIBBCU_ERR_SET_GPIO_FAIL:
-		return "\n<ERROR------cut------------------"
-		       "\nSet GPIO failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Set GPIO failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_SET_BOOTMODE_FAIL:
-		return "\n<ERROR------cut------------------"
-		       "\nSet boot mode failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Set boot mode failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_INIT_FAIL:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU init failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU init failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_RESET_FAIL:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU reset failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU reset failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_ONOFF_FAIL:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU onoff executed failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU onoff executed failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_BOOT_FROM_SWITCH:
-		return "\nPin bootmode_sel is disabled, boot from BOOT SWITCH!\n";
+		return "Pin bootmode_sel is disabled, boot from BOOT SWITCH!\n";
 	case -LIBBCU_ERR_NO_REMOTE_EN:
-		return "\n<ERROR------cut------------------"
-		       "\nCannot find gpio remote_en!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Cannot find gpio remote_en!"
+		       "------>\n";
 	case -LIBBCU_ERR_GET_BOOT_CFG:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU get boot config failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU get boot config failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_GET_BOOT_MODE:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU get boot mode failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU get boot mode failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_NO_GET_OR_SET:
-		return "\n<ERROR------cut------------------"
-		       "\nMissing get/set related option!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Missing get/set related option!"
+		       "------>\n";
 	case -LIBBCU_ERR_NO_SET_VAL_OPT:
-		return "\n<ERROR------cut------------------"
-		       "\nMissing SET option!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Missing SET option!"
+		       "------>\n";
 	case -LIBBCU_ERR_INVALID_GPIO_NAME_OPT:
-		return "\n<ERROR------cut------------------\n"
-			"Could not detect a valid gpio name entered.\n"
-		       "------------end------------------>\n\n";
+		return "\n<ERROR------"
+			"Could not detect a valid gpio name entered."
+		       "------>\n";
 	case -LIBBCU_ERR_FIND_GPIO_PATH:
-		return "\n<ERROR------cut------------------"
-		       "\nFailed to find gpio path!\n"
-		       "Please check the provided gpio name and board name!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Failed to find gpio path!"
+		       " Please check the provided gpio name and board name!"
+		       "------>\n";
 	case -LIBBCU_ERR_GET_GPIO_LEVEL:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU get gpio failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU get gpio failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_READ:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU read EEPROM failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU read EEPROM failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_WRITE_DEFAULT:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU write default value to EEPROM failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU write default value to EEPROM failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_UPDATE_USRSN:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU update user SN number to EEPROM failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU update user SN number to EEPROM failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_UPDATE_BREV:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU update board revison to EEPROM failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU update board revison to EEPROM failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_UPDATE_SREV:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU update soc revison to EEPROM failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU update soc revison to EEPROM failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_ERASE:
-		return "\n<ERROR------cut------------------"
-		       "\nBCU erase EEPROM failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "BCU erase EEPROM failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_NO_OPT:
-		return "\n<ERROR------cut------------------"
-		       "\nMissing read/write option!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Missing read/write option!"
+		       "------>\n";
 	case -LIBBCU_ERR_UNSPPORTED_GPIO:
-		return "\n<ERROR------cut------------------"
-		       "\nThe GPIO name is unsupported!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "The GPIO name is unsupported!"
+		       "------>\n";
 	case -LIBBCU_ERR_CREATE_MONITOR_THREAD:
-		return "\n<ERROR------cut------------------"
-		       "\nPthread_create monitor thread failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Pthread_create monitor thread failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_MUTEX_LOCK_INIT:
-		return "\n<ERROR------cut------------------"
-		       "\nMutex lock init failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Mutex lock init failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_MOT_OPEN_FILE:
-		return "\n<ERROR------cut------------------"
-		       "\nMonitor: Cannot open dump file!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Monitor: Cannot open dump file!"
+		       "------>\n";
 	case -LIBBCU_ERR_MOT_GROUP_PARSE:
-		return "\n<ERROR------cut------------------"
-		       "\nMonitor: Group parse failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Monitor: Group parse failed!"
+		       "------>\n";
 	case -LIBBCU_ERR_MOT_PAC1934_CANNOT_ACCESS:
-		return "\n<ERROR------cut------------------"
-		       "\nMonitor: PAC1934 cannot access!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Monitor: PAC1934 cannot access!"
+		       "------>\n";
 	case -LIBBCU_ERR_MOT_NO_SR:
-		return "\n<ERROR------cut------------------"
-		       "\nMonitor: SR name not found!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Monitor: SR name not found!"
+		       "------>\n";
 	case -LIBBCU_ERR_YML_OPEN_FILE:
-		return "\n<ERROR------cut------------------"
-		       "\nYAML: Cannot open yaml file!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "YAML: Cannot open yaml file!"
+		       "------>\n";
 	case -LIBBCU_ERR_YML_PARSER:
-		return "\n<ERROR------cut------------------"
-		       "\nYAML: Yaml file parse failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "YAML: Yaml file parse failed!"
+		       "------>\n";
 	case -LIBBCU_WARN_YML_OLD:
-		return "\n WARNNING: YAML: Yaml file too old!\n\n";
+		return "<WARNNING------"
+		       "YAML: Yaml file too old!"
+		       "------>\n";
 	case -LIBBCU_ERR_YML_READ:
-		return "\n<ERROR------cut------------------"
-		       "\nYAML: Read yaml file failed!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "YAML: Read yaml file failed!"
+		       "------>\n";
+	case -LIBBCU_ERR_EEPROM_BREV_MISMATCH:
+		return "<ERROR------"
+		       "Board rev in EEPROM and command provided MISMATCH!"
+		       "------>\n";
+	case -LIBBCU_ERR_EEPROM_BOARD_MISMATCH:
+		return "<ERROR------"
+		       "Wrong board connected or provided in command!"
+		       "------>\n";
+	case -LIBBCU_ERR_EEPROM_EMPTY:
+		return "<WARNNING------"
+		       "This board support EEPROM but it is EMPTY.";
+		       "------>\n";
 	default:
-		return "\n<ERROR------cut------------------"
-		       "\nNot handled error!\n"
-		       "------------end------------------>\n\n";
+		return "<ERROR------"
+		       "Not handled error!"
+		       "------>\n";
 	}
 }
 
@@ -1864,6 +1878,10 @@ int bcu_monitor_perpare(struct options_setting *setting)
 {
 	int ret;
 
+	struct board_info* board = get_board(setting->board);
+	if (board == NULL)
+		return -LIBBCU_ERR_NO_THIS_BOARD;
+
 	mprintf(3, "bcu_monitor_perpare: creating monitor thread\n");
 
 	memset(&monitor_td, 0, sizeof(monitor_td));
@@ -2066,6 +2084,22 @@ int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info
 		}
 		j++;
 	}
+
+	return 0;
+}
+
+int bcu_check_eeprom_data(struct options_setting *setting)
+{
+	struct board_info* board=get_board(setting->board);
+	if (board == NULL)
+		return -LIBBCU_ERR_NO_THIS_BOARD;
+	int val = check_board_eeprom(board, 1);
+	if (val == -11)
+		return -LIBBCU_ERR_EEPROM_BREV_MISMATCH;
+	if (val == -22)
+		return -LIBBCU_ERR_EEPROM_BOARD_MISMATCH;
+	if (val < 0 && val != -10)
+		return -LIBBCU_ERR_EEPROM_EMPTY;
 
 	return 0;
 }

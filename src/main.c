@@ -59,34 +59,53 @@
 
 int GV_MONITOR_TERMINATED = 0;
 
-char *get_err_str(int err_num)
+void print_err_str(struct options_setting *setting, int err_num)
 {
-	char *err_str = NULL;
+	char err_str[500] = {0};
 	printf("%s", bcu_get_err_str(err_num));
 
 	switch (err_num)
 	{
 	case -LIBBCU_ERR_NO_THIS_BOARD:
-		err_str = "\nMissing option <--board=>\n\n"
+		sprintf(err_str, "Missing option <--board=>\n\n"
 		       "Or use option <--auto> to find the board automatically\n"
-		       "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n";
+		       "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n");
+		break;
 	case -LIBBCU_ERR_NO_BOOT_MODE_OPT:
-		err_str = "\nPlease add <-m> or <--bootmode=> option.\n";
+		sprintf(err_str, "Please add <-m> or <--bootmode=> option.\n");
+		break;
 	case -LIBBCU_ERR_NO_GET_OR_SET:
-		err_str = "\nMissing option: <--get> or <--set>/<--set=>!\n";
+		sprintf(err_str, "Missing option: <--get> or <--set>/<--set=>!\n");
+		break;
 	case -LIBBCU_ERR_NO_SET_VAL_OPT:
-		err_str = "\nMissing option: <--set=>\n"
-		       "Please enter a valid output state, 1 to set logic level high, 0 to set it low.\n";
+		sprintf(err_str, "Missing option: <--set=>\n"
+		       "Please enter a valid output state, 1 to set logic level high, 0 to set it low.\n");
+		break;
 	case -LIBBCU_ERR_INVALID_GPIO_NAME_OPT:
-		err_str = "\nPlease enter the name of the gpio pin by using option <-g>/<--gpioname=>.\n"
-		       "To check a list of available gpio pin, please use command:\n  ./bcu lsgpio --board=xxx\n";
+		sprintf(err_str, "Please enter the name of the gpio pin by using option <-g>/<--gpioname=>.\n"
+		       "To check a list of available gpio pin, please use command:\n  ./bcu lsgpio --board=xxx\n");
+		break;
 	case -LIBBCU_ERR_EEPROM_NO_OPT:
-		err_str = "\nMissing option: <-w>/<--write> or <-r>/<read>!\n";
+		sprintf(err_str, "Missing option: <-w>/<--write> or <-r>/<read>!\n");
+		break;
 	case -LIBBCU_ERR_UNSPPORTED_GPIO:
-		err_str = "\nPlease double check the GPIO name with command:\n"
-		       "./bcu lsgpio --board=xxx\n";
-	default:
-		err_str = "";
+		sprintf(err_str, "Please double check the GPIO name with command:\n"
+		       "./bcu lsgpio --board=xxx\n");
+		break;
+	case -LIBBCU_ERR_EEPROM_BREV_MISMATCH:
+		sprintf(err_str, "If the board has been reworked to a new revision, please use the below command to update the value in EEPROM:\n"
+			  "\n# ./bcu eeprom -w -board=[new BOARDNAME showed in cmd lsboard]\n");
+		break;
+	case -LIBBCU_ERR_EEPROM_BOARD_MISMATCH:
+		sprintf(err_str, "Please check the value of <--board>/<-b>.\n");
+		break;
+	case -LIBBCU_ERR_EEPROM_EMPTY:
+		sprintf(err_str, "Please use below command to program the EEPROM.\n"
+				 "\n# ./bcu eeprom -w -board=%s\n"
+				 "\nThen you can choose to replace option <-board=> with <-auto>.\n"
+				 "NOTE: If other boards are also connected to the same host, <-auto> may break its ttyUSB function temporarily.\n",
+		setting->board);
+		break;
 	}
 
 	printf("%s", err_str);
@@ -125,12 +144,12 @@ static int monitor_size(int columns_or_rows)
 
 int init(struct options_setting *setting)
 {
-	printf("%s", bcu_get_err_str(bcu_init(setting)));
+	print_err_str(setting, bcu_init(setting));
 }
 
 int deinit(struct options_setting *setting)
 {
-	printf("%s", bcu_get_err_str(bcu_deinit(setting)));
+	print_err_str(setting, bcu_deinit(setting));
 }
 
 int reset(struct options_setting *setting)
@@ -138,7 +157,7 @@ int reset(struct options_setting *setting)
 	int reset_time_ms = bcu_reset_time_ms(setting);
 
 	printf("Board %s will reset in %.1f seconds...\n", setting->board, reset_time_ms / 1000.0);
-	printf("%s", bcu_get_err_str(bcu_reset(setting)));
+	print_err_str(setting, bcu_reset(setting));
 }
 
 int onoff(struct options_setting *setting)
@@ -146,7 +165,7 @@ int onoff(struct options_setting *setting)
 	int ret = 0;
 
 	ret = bcu_onoff(setting, setting->hold);
-	printf("%s", bcu_get_err_str(ret));
+	print_err_str(setting, ret);
 }
 
 int bootmode(struct options_setting *setting)
@@ -156,7 +175,7 @@ int bootmode(struct options_setting *setting)
 	ret = bcu_bootmode(setting, &bootconfiglen);
 	if (ret)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -189,7 +208,7 @@ int gpio(struct options_setting *setting)
 	ret = bcu_gpio(setting);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -217,7 +236,7 @@ int eeprom(struct options_setting *setting)
 	ret = bcu_eeprom(setting, &eeprom_info);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -397,7 +416,7 @@ int monitor(struct options_setting *setting)
 	ret = bcu_monitor_perpare(setting);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -411,7 +430,7 @@ int monitor(struct options_setting *setting)
 	{
 		ret = bcu_monitor_getvalue(setting, &power_val);
 		if (ret) {
-			printf("%s", bcu_get_err_str(ret));
+			print_err_str(setting, ret);
 			break;
 		}
 
@@ -707,7 +726,7 @@ int monitor(struct options_setting *setting)
 	ret = bcu_monitor_unperpare(setting);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -873,7 +892,7 @@ retry:
 	ret = bcu_monitor_perpare(setting);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -881,7 +900,7 @@ retry:
 	{
 		ret = bcu_monitor_getvalue(setting, &power_val);
 		if (ret) {
-			printf("%s", bcu_get_err_str(ret));
+			print_err_str(setting, ret);
 			break;
 		}
 
@@ -933,7 +952,7 @@ retry:
 			ret = bcu_monitor_unperpare(setting);
 			if (ret < 0)
 			{
-				printf("%s", bcu_get_err_str(ret));
+				print_err_str(setting, ret);
 				return ret;
 			}
 			goto retry;
@@ -945,7 +964,7 @@ retry:
 	ret = bcu_monitor_unperpare(setting);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(setting, ret);
 		return ret;
 	}
 
@@ -965,7 +984,7 @@ int lsftdi(struct options_setting *setting)
 	boardnum = bcu_lsftdi(setting->auto_find_board, boardlist, location_id_str);
 	if (boardnum < 0)
 	{
-		printf("%s", bcu_get_err_str(boardnum));
+		print_err_str(setting, boardnum);
 		return boardnum;
 	}
 	else if (boardnum == 0)
@@ -997,7 +1016,7 @@ int lsboard(void)
 	boardnum = bcu_lsboard(boardlist);
 	if (boardnum < 0)
 	{
-		printf("%s", bcu_get_err_str(boardnum));
+		print_err_str(NULL, boardnum);
 		return boardnum;
 	}
 
@@ -1018,7 +1037,7 @@ int lsgpio(struct options_setting *setting)
 	gpionum = bcu_lsgpio(setting, gpiolist);
 	if (gpionum < 0)
 	{
-		printf("%s", bcu_get_err_str(gpionum));
+		print_err_str(setting, gpionum);
 		return gpionum;
 	}
 
@@ -1039,7 +1058,7 @@ int lsbootmode(struct options_setting *setting)
 	bootmodenum = bcu_lsbootmode(setting, bootmodelist);
 	if (bootmodenum < 0)
 	{
-		printf("%s", bcu_get_err_str(bootmodenum));
+		print_err_str(setting, bootmodenum);
 		return bootmodenum;
 	}
 
@@ -1090,14 +1109,15 @@ int main(int argc, char **argv)
 	if (ret)
 		return ret;
 
+	bcu_update_debug_level(setting.debug);
+
 	ret = bcu_get_yaml_file(&setting, yamfile);
 	if (ret < 0)
 	{
-		printf("%s", bcu_get_err_str(ret));
+		print_err_str(&setting, ret);
 		return ret;
 	}
 
-	bcu_update_debug_level(setting.debug);
 	if (strlen(setting.location_id_string))
 		bcu_update_location_id(setting.location_id_string);
 
@@ -1105,7 +1125,7 @@ int main(int argc, char **argv)
 	{
 		ret = bcu_get_boot_mode_hex(&setting);
 		if (ret) {
-			printf("%s", bcu_get_err_str(ret));
+			print_err_str(&setting, ret);
 			return ret;
 		}
 	}
@@ -1113,18 +1133,24 @@ int main(int argc, char **argv)
 	{
 		ret = bcu_check_gpio_name(&setting);
 		if (ret) {
-			printf("%s", bcu_get_err_str(ret));
+			print_err_str(&setting, ret);
 			return ret;
 		}
 	}
 
+	ret = bcu_check_eeprom_data(&setting);
+	if (ret) {
+		print_err_str(&setting, ret);
+		return ret;
+	}
+
 	if (strcmp(cmd, "gpio") == 0)
 	{
-		gpio(&setting);
+		ret = gpio(&setting);
 	}
 	else if (strcmp(cmd, "bootmode") == 0)
 	{
-		bootmode(&setting);
+		ret = bootmode(&setting);
 	}
 	// else if (strcmp(cmd, "help") == 0)
 	// {
@@ -1135,47 +1161,47 @@ int main(int argc, char **argv)
 	// }
 	else if (strcmp(cmd, "eeprom") == 0)
 	{
-		eeprom(&setting);
+		ret = eeprom(&setting);
 	}
 	else if (strcmp(cmd, "monitor") == 0)
 	{
-		monitor(&setting);
+		ret = monitor(&setting);
 	}
 	else if (strcmp(cmd, "server") == 0)
 	{
-		server(&setting);
+		ret = server(&setting);
 	}
 	else if (strcmp(cmd, "lsftdi") == 0)
 	{
-		lsftdi(&setting);
+		ret = lsftdi(&setting);
 	}
 	else if (strcmp(cmd, "lsboard") == 0)
 	{
-		lsboard();
+		ret = lsboard();
 	}
 	else if (strcmp(cmd, "lsbootmode") == 0)
 	{
-		lsbootmode(&setting);
+		ret = lsbootmode(&setting);
 	}
 	else if (strcmp(cmd, "lsgpio") == 0)
 	{
-		lsgpio(&setting);
+		ret = lsgpio(&setting);
 	}
 	else if (strcmp(cmd, "reset") == 0)
 	{
-		reset(&setting);
+		ret = reset(&setting);
 	}
 	else if (strcmp(cmd, "onoff") == 0)
 	{
-		onoff(&setting);
+		ret = onoff(&setting);
 	}
 	else if (strcmp(cmd, "init") == 0)
 	{
-		init(&setting);
+		ret = init(&setting);
 	}
 	else if (strcmp(cmd, "deinit") == 0)
 	{
-		deinit(&setting);
+		ret = deinit(&setting);
 	}
 	// else if (strcmp(cmd, "uuu") == 0)
 	// {
@@ -1195,5 +1221,5 @@ int main(int argc, char **argv)
 		// print_help(NULL);
 	}
 
-	return 0;
+	return ret;
 }

@@ -102,6 +102,9 @@
 #define LIBBCU_ERR_YML_PARSER			(38)
 #define LIBBCU_WARN_YML_OLD			(39)
 #define LIBBCU_ERR_YML_READ			(40)
+#define LIBBCU_ERR_EEPROM_BREV_MISMATCH		(41)
+#define LIBBCU_ERR_EEPROM_BOARD_MISMATCH	(42)
+#define LIBBCU_ERR_EEPROM_EMPTY			(43)
 
 struct options_setting {
 	int debug;
@@ -227,6 +230,7 @@ int bcu_monitor_is_stop(void);
 int bcu_monitor_get_err(void);
 int bcu_monitor_unperpare(struct options_setting *setting);
 int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info);
+int bcu_check_eeprom_data(struct options_setting *setting);
 int bcu_check_gpio_name(struct options_setting *setting);
 int bcu_gpio(struct options_setting *setting);
 int bcu_bootmode(struct options_setting *setting, int *bootcfglen);
