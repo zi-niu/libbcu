@@ -522,13 +522,13 @@ int monitor(struct options_setting *setting)
 				strcat(output_buff, temp);
 			}
 			if (power_val.range_ctrl == MONITOR_RANGE_MA)
-					PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
-				else if (power_val.range_ctrl == MONITOR_RANGE_AUTO) {
-					char tp_title[50] = {0};
-					sprintf(tp_title, "Power(mWatt)/%s(uWatt)%s", g_vt_back_enable, g_vt_back_default);
-					PRINTF_MIDDLE_COLOR(temp, tp_title, "Power(mWatt)/(uWatt)", LEN_RAIL_P * 2);
-				} else
-					PRINTF_MIDDLE(temp, "Power(uWatt)", LEN_RAIL_P * 2);
+				PRINTF_MIDDLE(temp, "Power(mWatt)", LEN_RAIL_P * 2);
+			else if (power_val.range_ctrl == MONITOR_RANGE_AUTO) {
+				char tp_title[50] = {0};
+				sprintf(tp_title, "Power(mWatt)/%s(uWatt)%s", g_vt_back_enable, g_vt_back_default);
+				PRINTF_MIDDLE_COLOR(temp, tp_title, "Power(mWatt)/(uWatt)", LEN_RAIL_P * 2);
+			} else
+				PRINTF_MIDDLE(temp, "Power(uWatt)", LEN_RAIL_P * 2);
 			strcat(output_buff, temp);
 			sprintf(temp, " | ");
 			strcat(output_buff, temp);
