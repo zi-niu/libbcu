@@ -31,6 +31,11 @@
 
 #ifndef LIBBCU_H
 #define LIBBCU_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -243,4 +248,8 @@ int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath);
 void bcu_remove_all_ftdi_port(void);
 int bcu_return_rail_name_max_len(struct options_setting *setting);
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* #ifndef LIBBCU_H */
