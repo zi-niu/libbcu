@@ -303,8 +303,8 @@ char* g_vt_back_default = (char*)"\x1B[49m";
 int LEN_RAIL_NAME = 25;
 int LEN_RAIL_V =  6;
 int LEN_RAIL_C =  8;
-int LEN_RAIL_P =  8;
-int LEN_GROUP_P =  8;
+int LEN_RAIL_P =  9;
+int LEN_GROUP_P =  9;
 int LEN_RANGE_1 =  8;
 int LEN_RANGE_2 =  6;
 
@@ -437,9 +437,10 @@ int monitor(struct options_setting *setting)
 		if (!power_val.rail_num)
 			continue;
 
-		if (power_val.range_ctrl == MONITOR_RANGE_MA)
-			LEN_RAIL_C = LEN_RAIL_P = 8;
-		else if (power_val.range_ctrl == MONITOR_RANGE_AUTO)
+		if (power_val.range_ctrl == MONITOR_RANGE_MA) {
+			LEN_RAIL_C = 8;
+			LEN_RAIL_P = 9;
+		} else if (power_val.range_ctrl == MONITOR_RANGE_AUTO)
 			LEN_RAIL_C = LEN_RAIL_P = 11;
 		else
 			LEN_RAIL_C = LEN_RAIL_P = 11;
