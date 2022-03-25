@@ -69,8 +69,8 @@ struct ftdi_eeprom_field_code_tb ftdi_eeprom_field[] = {
 
 struct ftdi_eeprom_user_area imx8ulp_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x7, 0x1, 0x1,
-	0x3, 0x1, 0x1,
+	0x7, 0x0, 0x0,
+	0x3, 0x0, 0x0,
 	0x4, 0xF, 0xF,
 	25,
 	1
@@ -78,8 +78,8 @@ struct ftdi_eeprom_user_area imx8ulp_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area imx8dxlevk_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x1, 0x1, 0x1,
-	0x1, 0x1, 0x2,
+	0x1, 0x0, 0x0,
+	0x1, 0x1, 0x0,
 	0x1, 0xF, 0xF,
 	24,
 	1
@@ -87,8 +87,8 @@ struct ftdi_eeprom_user_area imx8dxlevk_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area imx8dxlevk_c1_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x1, 0x3, 0x2,
 	0x1, 0x1, 0x2,
+	0x1, 0x1, 0x0,
 	0x1, 0xF, 0xF,
 	24,
 	1
@@ -96,8 +96,8 @@ struct ftdi_eeprom_user_area imx8dxlevk_c1_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area imx8mpevkpwr_a0_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x4, 0x1, 0x1,
-	0x2, 0x1, 0x2,
+	0x4, 0x0, 0x0,
+	0x2, 0x1, 0x0,
 	0x2, 0xF, 0xF,
 	27,
 	1
@@ -105,8 +105,8 @@ struct ftdi_eeprom_user_area imx8mpevkpwr_a0_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area imx8mpevkpwr_a1_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x4, 0x1, 0x2,
-	0x2, 0x1, 0x2,
+	0x4, 0x1, 0x0,
+	0x2, 0x1, 0x0,
 	0x2, 0xF, 0xF,
 	27,
 	1
@@ -114,8 +114,8 @@ struct ftdi_eeprom_user_area imx8mpevkpwr_a1_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area imx8ulpevk_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x7, 0x1, 0x1,
-	0x3, 0x1, 0x1,
+	0x7, 0x0, 0x0,
+	0x3, 0x0, 0x0,
 	0x4, 0xF, 0xF,
 	15,
 	1
@@ -123,8 +123,8 @@ struct ftdi_eeprom_user_area imx8ulpevk_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area val_board_1_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x8, 0x1, 0x1,
-	0x4, 0x1, 0x1,
+	0x8, 0x0, 0x0,
+	0x4, 0x0, 0x0,
 	0x5, 0xF, 0xF,
 	37,
 	1
@@ -132,12 +132,42 @@ struct ftdi_eeprom_user_area val_board_1_ftdi_eeprom_user_area_info = {
 
 struct ftdi_eeprom_user_area val_board_2_ftdi_eeprom_user_area_info = {
 	0x1,
-	0x9, 0x1, 0x2,
-	0x5, 0x1, 0x1,
+	0x9, 0x1, 0x0,
+	0x5, 0x0, 0x0,
 	0x6, 0xF, 0xF,
 	34,
 	1
 };
+
+void data_add_1(struct ftdi_eeprom_user_area* data)
+{
+	data->board_id += 0x40;
+	data->board_rev_c += 1;
+	data->board_rev_n += 1;
+	data->soc_rev_c += 1;
+	data->soc_rev_n += 1;
+	if (data->pmic_rev_c != 0xF)
+		data->pmic_rev_c += 1;
+	if (data->pmic_rev_n != 0xF)
+		data->pmic_rev_n += 1;
+	data->nbr_pwr_rails += 1;
+	data->sn += 0x0101;
+}
+
+void data_minus_1(struct ftdi_eeprom_user_area* data)
+{
+	data->board_id -= 0x40;
+	data->board_rev_c -= 1;
+	data->board_rev_n -= 1;
+	data->soc_rev_c -= 1;
+	data->soc_rev_n -= 1;
+	if (data->pmic_rev_c != 0xF)
+		data->pmic_rev_c -= 1;
+	if (data->pmic_rev_n != 0xF)
+		data->pmic_rev_n -= 1;
+	data->nbr_pwr_rails -= 1;
+	data->sn -= 0x0101;
+}
 
 char* get_code_definition(int field, int code_idx)
 {
@@ -188,6 +218,8 @@ int bcu_ftdi_eeprom_read(struct eeprom_device* eeprom, unsigned int read_idx, vo
 	if (ret < 0)
 		return ret;
 
+	data_minus_1(eeprom_ua_data);
+
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
 		mprintf(2, "Invalid EEPROM context, use -w option to write the default values.\n");
@@ -204,22 +236,22 @@ int bcu_ftdi_eeprom_read(struct eeprom_device* eeprom, unsigned int read_idx, vo
 		strcpy(read_buf, get_code_definition(ftdi_eeprom_board_id, eeprom_ua_data->board_id));
 		break;
 	case ftdi_eeprom_board_rev:
-		((char *)read_buf)[0] = 'A' + eeprom_ua_data->board_rev_c - 1;
-		((char *)read_buf)[1] = '0' + eeprom_ua_data->board_rev_n - 1;
+		((char *)read_buf)[0] = 'A' + eeprom_ua_data->board_rev_c;
+		((char *)read_buf)[1] = '0' + eeprom_ua_data->board_rev_n;
 		break;
 	case ftdi_eeprom_soc_id:
 		strcpy(read_buf, get_code_definition(ftdi_eeprom_soc_id, eeprom_ua_data->soc_id));
 		break;
 	case ftdi_eeprom_soc_rev:
-		((char *)read_buf)[0] = 'A' + eeprom_ua_data->soc_rev_c - 1;
-		((char *)read_buf)[1] = '0' + eeprom_ua_data->soc_rev_n - 1;
+		((char *)read_buf)[0] = 'A' + eeprom_ua_data->soc_rev_c;
+		((char *)read_buf)[1] = '0' + eeprom_ua_data->soc_rev_n;
 		break;
 	case ftdi_eeprom_pmic_id:
 		strcpy(read_buf, get_code_definition(ftdi_eeprom_pmic_id, eeprom_ua_data->pmic_id));
 		break;
 	case ftdi_eeprom_pmic_rev:
-		((char *)read_buf)[0] = 'A' + eeprom_ua_data->pmic_rev_c - 1;
-		((char *)read_buf)[1] = '0' + eeprom_ua_data->pmic_rev_n - 1;
+		((char *)read_buf)[0] = 'A' + eeprom_ua_data->pmic_rev_c;
+		((char *)read_buf)[1] = '0' + eeprom_ua_data->pmic_rev_n;
 		break;
 	case ftdi_eeprom_nbr_pwr_rails:
 		temp = eeprom_ua_data->nbr_pwr_rails;
@@ -247,6 +279,8 @@ int bcu_ftdi_eeprom_read_code(struct eeprom_device* eeprom, unsigned int read_id
 	ret = eeprom->eeprom_read(eeprom, eeprom_data.ua_data, BCU_FTDI_EEPROM_UAREA_SADDR, BCU_FTDI_EEPROM_USE_LEN, eeprom_data.ftdi_sn);
 	if (ret < 0)
 		return ret;
+
+	data_minus_1(eeprom_ua_data);
 
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
@@ -310,6 +344,8 @@ int bcu_ftdi_eeprom_return_info(struct eeprom_device* eeprom, eeprom_information
 	if (ret < 0)
 		return ret;
 
+	data_minus_1(eeprom_ua_data);
+
 	// for (int i = 0; i <10; i++)
 	// 	mprintf(3, "0x%x ", eeprom_data.ua_data[i]);
 	// mprintf(3, "\n");
@@ -329,14 +365,14 @@ int bcu_ftdi_eeprom_return_info(struct eeprom_device* eeprom, eeprom_information
 		strcpy(eeprom_info->ftdi_sn, "");
 	}
 
-	rev[0] = 'A' + eeprom_ua_data->board_rev_c - 1;
-	rev[1] = '0' + eeprom_ua_data->board_rev_n - 1;
+	rev[0] = 'A' + eeprom_ua_data->board_rev_c;
+	rev[1] = '0' + eeprom_ua_data->board_rev_n;
 	mprintf(3, "Board Info: %s Rev %s\n", get_code_definition(ftdi_eeprom_board_id, eeprom_ua_data->board_id), rev);
 	strcpy(eeprom_info->board_id, get_code_definition(ftdi_eeprom_board_id, eeprom_ua_data->board_id));
 	strcpy(eeprom_info->board_rev, rev);
 
-	rev[0] = 'A' + eeprom_ua_data->soc_rev_c - 1;
-	rev[1] = '0' + eeprom_ua_data->soc_rev_n - 1;
+	rev[0] = 'A' + eeprom_ua_data->soc_rev_c;
+	rev[1] = '0' + eeprom_ua_data->soc_rev_n;
 	mprintf(3, "  SoC Info: %s Rev %s\n", get_code_definition(ftdi_eeprom_soc_id, eeprom_ua_data->soc_id), rev);
 	strcpy(eeprom_info->soc_id, get_code_definition(ftdi_eeprom_soc_id, eeprom_ua_data->soc_id));
 	strcpy(eeprom_info->soc_rev, rev);
@@ -370,6 +406,8 @@ int bcu_ftdi_eeprom_write_default_sn(struct eeprom_device* eeprom, struct ftdi_e
 	int ret = 0;
 	unsigned char* wbuf = (unsigned char*)ua_data;
 
+	data_add_1(ua_data);
+
 	ret = eeprom->eeprom_write(eeprom, wbuf, BCU_FTDI_EEPROM_UAREA_SADDR, BCU_FTDI_EEPROM_USE_LEN, ftdi_sn);
 
 	return ret;
@@ -397,6 +435,8 @@ int bcu_ftdi_eeprom_write(struct eeprom_device* eeprom, unsigned int write_idx, 
 	if (ret < 0)
 		return ret;
 
+	data_minus_1(eeprom_ua_data);
+
 	if (eeprom_ua_data->config_flag == 0x0 || eeprom_ua_data->config_flag == 0x3)
 	{
 		mprintf(2, "Invalid EEPROM context, use -w option to write the default values.\n");
@@ -413,24 +453,24 @@ int bcu_ftdi_eeprom_write(struct eeprom_device* eeprom, unsigned int write_idx, 
 		eeprom_ua_data->board_id = temp;
 		break;
 	case ftdi_eeprom_board_rev:
-		eeprom_ua_data->board_rev_c = ((char *)write_buf)[0] - 'A' + 1;
-		eeprom_ua_data->board_rev_n = ((char *)write_buf)[1] - '0' + 1;
+		eeprom_ua_data->board_rev_c = ((char *)write_buf)[0] - 'A';
+		eeprom_ua_data->board_rev_n = ((char *)write_buf)[1] - '0';
 		break;
 	case ftdi_eeprom_soc_id:
 		memcpy(&temp, write_buf, sizeof(short));
 		eeprom_ua_data->soc_id = temp;
 		break;
 	case ftdi_eeprom_soc_rev:
-		eeprom_ua_data->soc_rev_c = ((char *)write_buf)[0] - 'A' + 1;
-		eeprom_ua_data->soc_rev_n = ((char *)write_buf)[1] - '0' + 1;
+		eeprom_ua_data->soc_rev_c = ((char *)write_buf)[0] - 'A';
+		eeprom_ua_data->soc_rev_n = ((char *)write_buf)[1] - '0';
 		break;
 	case ftdi_eeprom_pmic_id:
 		memcpy(&temp, write_buf, sizeof(short));
 		eeprom_ua_data->pmic_id = temp;
 		break;
 	case ftdi_eeprom_pmic_rev:
-		eeprom_ua_data->pmic_rev_c = ((char *)write_buf)[0] - 'A' + 1;
-		eeprom_ua_data->pmic_rev_n = ((char *)write_buf)[1] - '0' + 1;
+		eeprom_ua_data->pmic_rev_c = ((char *)write_buf)[0] - 'A';
+		eeprom_ua_data->pmic_rev_n = ((char *)write_buf)[1] - '0';
 		break;
 	case ftdi_eeprom_nbr_pwr_rails:
 		memcpy(&temp, write_buf, sizeof(char));
@@ -443,6 +483,8 @@ int bcu_ftdi_eeprom_write(struct eeprom_device* eeprom, unsigned int write_idx, 
 	default:
 		break;
 	}
+
+	data_add_1(eeprom_ua_data);
 
 	ret = eeprom->eeprom_write(eeprom, eeprom_data.ua_data, BCU_FTDI_EEPROM_UAREA_SADDR, BCU_FTDI_EEPROM_USE_LEN, eeprom_data.ftdi_sn);
 
