@@ -59,11 +59,11 @@ void get_yaml_file_path(char* path)
 {
 #if defined(linux) || defined(__APPLE__)
 	strcat(path, getenv("HOME"));
-	strcat(path, "/bcu_config.yaml");
+	strcat(path, "/libbcu_config.yaml");
 #else
 	const char* homeProfile = "USERPROFILE";
 	GetEnvironmentVariable(homeProfile, path, 128);
-	strcat(path, "\\bcu_config.yaml");
+	strcat(path, "\\libbcu_config.yaml");
 #endif
 }
 
