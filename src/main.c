@@ -1077,7 +1077,10 @@ void terminateBCU(void)
 	bcu_remove_all_ftdi_port();
 }
 
-
+void print_version()
+{
+	printf("version %s\n", LIBBCU_GIT_VERSION);
+}
 
 void print_help(char *arg)
 {
@@ -1258,10 +1261,10 @@ int main(int argc, char **argv)
 	// {
 	// 	uuu(&setting);
 	// }
-	// else if (strcmp(cmd, "version") == 0)
-	// {
-	// 	print_version();
-	// }
+	 else if (strcmp(cmd, "version") == 0)
+	 {
+	 	print_version();
+	 }
 	// else if (strcmp(cmd, "upgrade") == 0)
 	// {
 	// 	upgrade_bcu(&setting);
