@@ -1151,18 +1151,16 @@ int main(int argc, char **argv)
 		{
 			printf("\nBCU Config file path: %s\n\n", yamfile);
 			return 0;
-		} else if (strcmp(cmd, "help") == 0)
+		} 
+		else if (strcmp(cmd, "help") == 0)
 		{
-			if (argc == 2)
-				print_help(NULL);
-			if (argc == 3)
-				print_help(argv[2]);
+			print_help(NULL);
+			return 0;
 		}
-		return 0;
 	default:
 		break;
 	}
-
+	
 	ret = opt_parser(argc, argv, &setting, cmd);
 	if (ret)
 		return ret;
@@ -1195,11 +1193,13 @@ int main(int argc, char **argv)
 			return ret;
 		}
 	}
-
-	ret = bcu_check_eeprom_data(&setting);
-	if (ret) {
-		print_err_str(&setting, ret);
-		return ret;
+	if (strlen(setting.board))
+	{
+		ret = bcu_check_eeprom_data(&setting);
+		if (ret) {
+			print_err_str(&setting, ret);
+			return ret;
+		}
 	}
 
 	if (strcmp(cmd, "gpio") == 0)
