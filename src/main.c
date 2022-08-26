@@ -1154,8 +1154,8 @@ int main(int argc, char **argv)
 		{
 			printf("\nBCU Config file path: %s\n\n", yamfile);
 			return 0;
-		} 
-		else if (strcmp(cmd, "help") == 0)
+		}
+		else if (strcmp(cmd, "help") == 0 || strcmp(argv[1], "-h") == 0)
 		{
 			print_help(NULL);
 			return 0;
