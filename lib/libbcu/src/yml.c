@@ -249,7 +249,7 @@ int replace_str(char* path, char* source, char* dest)
 	return 0;
 }
 
-int readConf(char* boardname)
+int readConf(struct options_setting* setting)
 {
 	char yamfile[128] = {0};
 	get_yaml_file_path(yamfile);
@@ -271,6 +271,9 @@ int readConf(char* boardname)
 
 	yaml_parser_set_input_file(&parser, fh);
 
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
+	if (board == NULL)
+		return -2;
 	/*
 	* state = 0 -> key
 	* state = 1 -> value
@@ -392,12 +395,12 @@ int readConf(char* boardname)
 				case STATUS_CHANGE_BOARD:
 				{
 					// mprintf(4, "boardname: %s, tk: %s\n", boardname, tk);
-					if (strcmp(tk, boardname))
+					if (strcmp(tk, setting->board))
 					{
 						now_status = STATUS_WAITING_WANTED_BOARD;
 						break;
 					}
-					now_board = get_board(tk);
+					now_board = get_board(0, tk);
 					if (now_board == NULL)
 						return -2;
 				}break;

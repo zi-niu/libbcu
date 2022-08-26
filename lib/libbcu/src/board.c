@@ -755,14 +755,41 @@ void guess_board_name(char* board_name)
 	mprintf(1, "\n");
 }
 
-struct board_info *get_board(char* board_name)
+struct board_info *get_board(int is_auto, char* board_name)
 {
 	if (strlen(board_name) == 0)
 	{
-		mprintf(3, "\nmissing option <--board=>\n");
-		mprintf(3, "\nOr use option <--auto> to find the board automatically\n");
-		mprintf(3, "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n\n");
-		return NULL;
+		if (is_auto == 0)
+		{
+			mprintf(3, "\nmissing option <--board=>\n");
+			mprintf(3, "\nOr use option <--auto> to find the board automatically\n");
+			mprintf(3, "NOTE: if other boards are also connected to the same host, <--auto> may break its ttyUSB function temporarily.\n\n");
+			return NULL;
+		}
+
+		switch (find_board_by_eeprom(board_name))
+		{
+			case 0:
+				printf("Auto recognized the board: %s\n", board_name);
+				break;
+			case -1:
+			{
+				printf("Can't auto recognize the board...Please try to add [-board=] option.\n");
+				return NULL;
+				// printf("For now, only 8MPLUSLPD4-CPU don't have eeprom. Assuming use \"imx8mpevk\"...\n");
+				// printf("Please also notice if there is any other board connected to this host.\n");
+				// printf("Try \"bcu lsftdi\" to find the right -id=...\n");
+				// strcpy(setting.board, "imx8mpevk");
+			}break;
+			case -2:
+			{
+				printf("Can't open FTDI channel...Please try to add [-board=] option.\n");
+				return NULL;
+			}break;
+
+			default:
+				break;
+		}
 	}
 
 	for (int i = 0; i < num_of_boards; i++)

@@ -99,14 +99,13 @@ int check_board_eeprom(struct board_info *board, int retmode)
 	return -1;
 }
 
-int find_board_by_eeprom(char *boardname, int *boardnum)
+int find_board_by_eeprom(char *boardname)
 {
 	int status, i;
 
 	for (i = 0; i < num_of_boards; i++)
 	{
 		strcpy(boardname, board_list[i].name);
-		*boardnum = i;
 		struct board_info *board = get_board_by_id(i);
 		status = check_board_eeprom(board, 0);
 		if (status != -1)
@@ -339,7 +338,7 @@ void free_gpio(struct gpio_device* gpio)
 
 int set_gpio_level(struct options_setting* setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	void* head = NULL;
@@ -406,7 +405,7 @@ int set_gpio_level(struct options_setting* setting)
 
 int get_gpio_level(struct options_setting* setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	void* head = NULL;
@@ -459,7 +458,7 @@ int get_gpio_level(struct options_setting* setting)
 
 int set_boot_config(struct options_setting* setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -513,7 +512,7 @@ int set_boot_mode(struct options_setting* setting)
 		mprintf(2, "set_boot_mode failed\n");
 		return -LIBBCU_ERR_NO_BOOT_MODE_OPT;
 	}
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -552,7 +551,7 @@ int set_boot_mode(struct options_setting* setting)
 
 int get_boot_config(struct options_setting* setting, unsigned char boot_modehex, int *bootcfglen)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -611,7 +610,7 @@ int get_boot_config(struct options_setting* setting, unsigned char boot_modehex,
 
 static int get_boot_mode(struct options_setting* setting, int *bootcfglen)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -713,7 +712,7 @@ void bcu_update_location_id(char *location_id)
 
 int bcu_check_gpio_name(struct options_setting *setting)
 {
-	struct board_info *board = get_board(setting->board);
+	struct board_info *board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	int j = 0;
@@ -730,7 +729,7 @@ int bcu_check_gpio_name(struct options_setting *setting)
 
 int bcu_get_boot_mode_hex(struct options_setting *setting)
 {
-	struct board_info *board = get_board(setting->board);
+	struct board_info *board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	int k = 0;
@@ -770,7 +769,7 @@ int bcu_get_boot_mode_hex(struct options_setting *setting)
 
 int bcu_init(struct options_setting *setting)
 {
-	struct board_info *board = get_board(setting->board);
+	struct board_info *board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	void *head = NULL;
@@ -832,7 +831,7 @@ int bcu_init(struct options_setting *setting)
 
 int bcu_reset_time_ms(struct options_setting *setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 
@@ -841,7 +840,7 @@ int bcu_reset_time_ms(struct options_setting *setting)
 
 int bcu_reset(struct options_setting *setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -974,7 +973,7 @@ int bcu_reset(struct options_setting *setting)
 
 int bcu_onoff(struct options_setting *setting, int delay_us)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -1020,7 +1019,7 @@ int bcu_onoff(struct options_setting *setting, int delay_us)
 
 int bcu_deinit(struct options_setting *setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	struct gpio_device* gpio = NULL;
@@ -1103,7 +1102,7 @@ void *bcu_monitor(void *threadarg)
 	// mprintf(4, "STATS : %d\n", m_td->is_stats);
 	// mprintf(4, "Unipolar : %d\n", m_td->is_unipolar);
 
-	struct board_info* board = get_board(m_td->setting->board);
+	struct board_info* board = get_board(m_td->setting->auto_find_board, m_td->setting->board);
 	if (board == NULL) {
 		// mprintf(2, "entered board model are not supported.\n");
 		m_td->ret = -LIBBCU_ERR_NO_THIS_BOARD;
@@ -1878,7 +1877,7 @@ int bcu_monitor_perpare(struct options_setting *setting)
 {
 	int ret;
 
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 
@@ -2003,7 +2002,7 @@ int bcu_monitor_unperpare(struct options_setting *setting)
 
 int bcu_return_rail_name_max_len(struct options_setting *setting)
 {
-	struct board_info* board = get_board(setting->board);
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 
@@ -2022,7 +2021,7 @@ int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info
 	void* end_point;
 	int j = 0;
 
-	struct board_info* board=get_board(setting->board);
+	struct board_info* board=get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 
@@ -2090,7 +2089,7 @@ int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info
 
 int bcu_check_eeprom_data(struct options_setting *setting)
 {
-	struct board_info* board=get_board(setting->board);
+	struct board_info* board=get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 	int val = check_board_eeprom(board, 1);
@@ -2134,11 +2133,11 @@ int bcu_bootmode(struct options_setting *setting, int *bootconfiglen)
 	}
 }
 
-int bcu_lsftdi(int is_auto, char boardlist[][MAX_MAPPING_NAME_LENGTH], char location_id_str[][MAX_LOCATION_ID_LENGTH])
+int bcu_lsftdi(struct options_setting* setting, char boardlist[][MAX_MAPPING_NAME_LENGTH], char location_id_str[][MAX_LOCATION_ID_LENGTH])
 {
-	int board_num = 0, b;
+	int board_num = 0;
 	char board_name[MAX_MAPPING_NAME_LENGTH];
-	if (!is_auto)
+	if (!setting->auto_find_board)
 		ft_list_devices(location_id_str, &board_num, LIST_DEVICE_MODE_OUTPUT);
 	else
 	{
@@ -2147,7 +2146,7 @@ int bcu_lsftdi(int is_auto, char boardlist[][MAX_MAPPING_NAME_LENGTH], char loca
 		for (int j = 0; j < board_num; j++)
 		{
 			strcpy(GV_LOCATION_ID, location_id_str[j]);
-			switch (find_board_by_eeprom(board_name, &b))
+			switch (find_board_by_eeprom(board_name))
 			{
 			case 0:
 				strcpy(boardlist[j], board_name);
@@ -2178,7 +2177,7 @@ int bcu_lsboard(char boardlist[][MAX_MAPPING_NAME_LENGTH])
 int bcu_lsbootmode(struct options_setting *setting, char bootmodelist[][MAX_MAPPING_NAME_LENGTH])
 {
 	int i = 0;
-	struct board_info *board = get_board(setting->board);
+	struct board_info *board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 
@@ -2194,7 +2193,7 @@ int bcu_lsbootmode(struct options_setting *setting, char bootmodelist[][MAX_MAPP
 int bcu_lsgpio(struct options_setting *setting, char gpiolist[][MAX_MAPPING_NAME_LENGTH])
 {
 	int i = 0, j = 0;
-	struct board_info *board = get_board(setting->board);
+	struct board_info *board = get_board(setting->auto_find_board, setting->board);
 	if (board == NULL)
 		return -LIBBCU_ERR_NO_THIS_BOARD;
 
@@ -2219,7 +2218,7 @@ int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath)
 {
 	int ret;
 
-	switch (readConf(setting->board))
+	switch (readConf(setting))
 	{
 	case 0:
 		break;
@@ -2228,7 +2227,7 @@ int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath)
 		ret = writeConf();
 		if (ret < 0)
 			return ret;
-		if (readConf(setting->board) < 0)
+		if (readConf(setting) < 0)
 			return -LIBBCU_ERR_YML_READ;
 		break;
 	case -2:

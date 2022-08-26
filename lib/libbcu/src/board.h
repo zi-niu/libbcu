@@ -92,7 +92,7 @@ int have_gpio(char* gpio_name, struct board_info *board);
 struct board_info *get_board_by_id(int id);
 int get_board_numer(void);
 /*given the name of the board, return coresponding board info struct*/
-struct board_info *get_board(char* board_name);
+struct board_info *get_board(int is_auto, char* board_name);
 /*given board_info, and the desired variable name, find the coresponding path of the variable*/
 int get_path(char* path, char* item_name, struct board_info *board);
 /*set path of the item*/
