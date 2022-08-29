@@ -790,8 +790,27 @@ int bcu_init(struct options_setting *setting)
 				status = set_boot_mode(setting);
 				if (status < 0)
 					return status;
-			} else
-				return -LIBBCU_ERR_NO_BOOT_MODE_OPT;
+			}
+			else {
+				printf("please give boot_mode, assuming 'sd' this time\n");
+				while (board->boot_modes[k].name != NULL)
+				{
+					if (strcmp(board->boot_modes[k].name, "sd") == 0)
+					{
+						setting->boot_mode_hex = board->boot_modes[k].boot_mode_hex;
+						break;
+					}
+					k++;
+				}
+				if (setting->boot_mode_hex != -1)
+					set_boot_mode(setting);
+				else
+				{
+					printf("could not recognize boot mode: sd, please give boot_mode\n");
+					printf("initialization failed\n");
+					return -1;
+				}
+			}
 
 			initid++;
 			continue;
