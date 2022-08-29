@@ -54,6 +54,8 @@
 #include "libbcu.h"
 #include "libbcu_version.h"
 
+#define LEGACY_MODE 0
+
 #define GET_COLUMN	0
 #define GET_ROW		1
 
@@ -1131,6 +1133,10 @@ void print_help(char *arg)
 
 int main(int argc, char **argv)
 {
+	//argc = 3;
+	//argv[1] = "lsgpio";
+	//argv[2] = "-board=val_board_1";
+
 	if (argc > 1)
 		if (strstr(argv[1], "bcu") != NULL)
 			if (auto_complete(argc, argv) == 0)
@@ -1164,9 +1170,20 @@ int main(int argc, char **argv)
 		break;
 	}
 	
+#if LEGACY_MODE
+	memset(&setting, 0, sizeof(struct options_setting));//initialized to zero
+	set_options_default(&setting);
+
+	//legacy_parse_board_id_options(cmd, argc, argv, &setting);
+
+	if (legacy_parse_options(cmd, argc, argv, &setting) == -1) {
+		//return 0;
+	}
+#else
 	ret = opt_parser(argc, argv, &setting, cmd);
 	if (ret)
 		return ret;
+#endif
 
 	bcu_update_debug_level(setting.debug);
 
