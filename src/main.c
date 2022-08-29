@@ -54,7 +54,7 @@
 #include "libbcu.h"
 #include "libbcu_version.h"
 
-#define LEGACY_MODE 0
+#define LEGACY_MODE 1
 
 #define GET_COLUMN	0
 #define GET_ROW		1
@@ -984,7 +984,7 @@ int lsftdi(struct options_setting *setting)
 	char location_id_str[MAX_NUMBER_OF_USB_DEVICES][MAX_LOCATION_ID_LENGTH] = {0};
 	int boardnum = 0;
 
-	boardnum = bcu_lsftdi(setting->auto_find_board, boardlist, location_id_str);
+	boardnum = bcu_lsftdi(setting, boardlist, location_id_str);
 	if (boardnum < 0)
 	{
 		print_err_str(setting, boardnum);
@@ -1133,10 +1133,6 @@ void print_help(char *arg)
 
 int main(int argc, char **argv)
 {
-	//argc = 3;
-	//argv[1] = "lsgpio";
-	//argv[2] = "-board=val_board_1";
-
 	if (argc > 1)
 		if (strstr(argv[1], "bcu") != NULL)
 			if (auto_complete(argc, argv) == 0)
@@ -1187,12 +1183,16 @@ int main(int argc, char **argv)
 
 	bcu_update_debug_level(setting.debug);
 
-	ret = bcu_get_yaml_file(&setting, yamfile);
-	if (ret < 0)
+	if (strlen(setting.board) || setting.auto_find_board)
 	{
-		print_err_str(&setting, ret);
-		return ret;
+		ret = bcu_get_yaml_file(&setting, yamfile);
+		if (ret < 0)
+		{
+			print_err_str(&setting, ret);
+			return ret;
+		}
 	}
+
 
 	if (strlen(setting.location_id_string))
 		bcu_update_location_id(setting.location_id_string);

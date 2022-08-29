@@ -239,7 +239,7 @@ int bcu_check_eeprom_data(struct options_setting *setting);
 int bcu_check_gpio_name(struct options_setting *setting);
 int bcu_gpio(struct options_setting *setting);
 int bcu_bootmode(struct options_setting *setting, int *bootcfglen);
-int bcu_lsftdi(int is_auto, char boardlist[][MAX_MAPPING_NAME_LENGTH], char location_id_str[][MAX_LOCATION_ID_LENGTH]);
+int bcu_lsftdi(struct options_setting* setting, char boardlist[][MAX_MAPPING_NAME_LENGTH], char location_id_str[][MAX_LOCATION_ID_LENGTH]);
 int bcu_lsboard(char boardlist[][MAX_MAPPING_NAME_LENGTH]);
 int bcu_lsbootmode(struct options_setting *setting, char bootmodelist[][MAX_MAPPING_NAME_LENGTH]);
 int bcu_lsgpio(struct options_setting *setting, char gpiolist[][MAX_MAPPING_NAME_LENGTH]);
