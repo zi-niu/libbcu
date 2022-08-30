@@ -1286,6 +1286,53 @@ int main(int argc, char **argv)
 	// {
 	// 	upgrade_bcu(&setting);
 	// }
+#if LEGACY_MODE
+	else if (strcmp(cmd, "get_level") == 0)
+	{
+		if (argc < 4)
+		{
+			printf("usage: get_level [GPIO_NAME] [-board=/-auto] [-id=]\r\n");
+			return 0;
+		}
+		setting.get_or_set = 2;
+		strcpy(setting.gpio_name, argv[2]);
+		ret = gpio(&setting);
+	}
+	else if (strcmp(cmd, "set_gpio") == 0)
+	{
+		if (argc < 5)
+		{
+			printf("usage: set_gpio [GPIO_NAME] [1/0] [-board=/-auto] [-id=]\r\n");
+			return 0;
+		}
+		setting.get_or_set = 1;
+		strcpy(setting.gpio_name, argv[2]);
+		setting.output_state = atoi(argv[3]);
+		ret = gpio(&setting);
+	}
+	else if (strcmp(cmd, "set_boot_mode") == 0)
+	{
+		if (argc < 4)
+		{
+			printf("usage: set_boot_mode [BOOTMODE_NAME] [-board=/-auto] [-id=] [-boothex=] [-bootbin=]\r\n");
+			return 0;
+		}
+
+		setting.get_or_set = 1;
+		ret = bootmode(&setting);
+	}
+	else if (strcmp(cmd, "get_boot_mode") == 0)
+	{
+		if (argc < 3)
+		{
+			printf("usage: get_boot_mode[-board=/-auto] [-id=]\r\n");
+			return 0;
+		}
+
+		setting.get_or_set = 2;
+		ret = bootmode(&setting);
+	}
+#endif
 	else
 	{
 		printf("%s is a invalid command\n\n", cmd);
