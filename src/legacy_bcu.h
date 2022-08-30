@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include "libbcu.h"
 
 #define NO_BOARD_AND_ID		1
 #define NO_BOARD			2

@@ -39,6 +39,8 @@ extern "C" {
 #include <stdio.h>
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <pthread.h>
 #endif
 
 #define MAX_PATH_LENGTH			800	//maximum path length allowed
