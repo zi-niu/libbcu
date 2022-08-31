@@ -221,6 +221,7 @@ typedef struct bcu_eeprom_data
 	int user_sn;
 } eeprom_informations;
 
+int bcu_find_board_by_eeprom(char *boardname);
 char *bcu_get_err_str(int err_num);
 void bcu_update_location_id(char *location_id);
 void bcu_update_debug_level(int debug_level);

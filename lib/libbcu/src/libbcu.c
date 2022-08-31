@@ -99,7 +99,7 @@ int check_board_eeprom(struct board_info *board, int retmode)
 	return -1;
 }
 
-int find_board_by_eeprom(char *boardname)
+int bcu_find_board_by_eeprom(char *boardname)
 {
 	int status, i;
 
@@ -2165,7 +2165,7 @@ int bcu_lsftdi(struct options_setting* setting, char boardlist[][MAX_MAPPING_NAM
 		for (int j = 0; j < board_num; j++)
 		{
 			strcpy(GV_LOCATION_ID, location_id_str[j]);
-			switch (find_board_by_eeprom(board_name))
+			switch (bcu_find_board_by_eeprom(board_name))
 			{
 			case 0:
 				strcpy(boardlist[j], board_name);

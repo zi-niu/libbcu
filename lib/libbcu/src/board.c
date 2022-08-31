@@ -38,6 +38,7 @@
 #include <ctype.h>
 
 #include "board.h"
+#include "libbcu.h"
 
 //x select channel of pca9548 chip, y select which sensor it is measuring 
 //rsense use mOhm
@@ -767,7 +768,7 @@ struct board_info *get_board(int is_auto, char* board_name)
 			return NULL;
 		}
 
-		switch (find_board_by_eeprom(board_name))
+		switch (bcu_find_board_by_eeprom(board_name))
 		{
 			case 0:
 				printf("Auto recognized the board: %s\n", board_name);
