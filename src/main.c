@@ -53,6 +53,7 @@
 #include "options.h"
 #include "libbcu.h"
 #include "libbcu_version.h"
+#include "legacy_bcu.h"
 
 #define LEGACY_MODE 1
 
