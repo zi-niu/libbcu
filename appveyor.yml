@@ -54,7 +54,8 @@ build_script:
 #- cmd: cov-build --dir cov-int msbuild %APPVEYOR_BUILD_FOLDER%/Board_Control_Utilities.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 
 # scheduled coverity check:
-- cmd: if "%APPVEYOR_SCHEDULED_BUILD%" == "True" (cov-build --dir cov-int msbuild %APPVEYOR_BUILD_FOLDER%/Board_Control_Utilities.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll") else (msbuild %APPVEYOR_BUILD_FOLDER%/Board_Control_Utilities.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")
+- cmd: if "%APPVEYOR_SCHEDULED_BUILD%" == "True" (cov-build --dir cov-int msbuild %APPVEYOR_BUILD_FOLDER%/lib/libbcu/msvs/libbcu/libbcu.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll") else (msbuild %APPVEYOR_BUILD_FOLDER%/lib/libbcu/msvs/libbcu/libbcu.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")
+- cmd: if "%APPVEYOR_SCHEDULED_BUILD%" == "True" (cov-build --dir cov-int msbuild %APPVEYOR_BUILD_FOLDER%/msvs/BCU_Terminal/BCU_Terminal.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll") else (msbuild %APPVEYOR_BUILD_FOLDER%/msvs/BCU_Terminal/BCU_Terminal.sln /verbosity:minimal /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll")
 - cmd: if "%APPVEYOR_SCHEDULED_BUILD%" == "True" (7z a -tzip bcu.zip cov-int)
 - cmd: if "%APPVEYOR_SCHEDULED_BUILD%" == "True" (curl --form token=%bcu_coverity_token% --form email=frank.li@nxp.com  --form file=@bcu.zip --form version="appveyor_upload"  --form description="attempt to automate coverity scan" https://scan.coverity.com/builds?project=NXPmicro%2Fbcu)
 
