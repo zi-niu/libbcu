@@ -9,7 +9,7 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
     - APPVEYOR_BUILD_WORKER_IMAGE: macOS
   bcu_coverity_token:
-    secure: zLWKlg76qCN8afOrCk5iqw==
+    secure: YuctP7YsJQIzsrBQtgEfwkYPu3StAEWV9SgPIBjwZDo=
 
 platform:
 - x64
