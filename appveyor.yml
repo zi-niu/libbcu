@@ -4,7 +4,7 @@ skip_tags: true
 #- switched to 2017 for now because VS 2019 imagines does not have coverity build tool
 environment:
   matrix:
-    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
     - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu1804
 #    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
 #    - APPVEYOR_BUILD_WORKER_IMAGE: macOS
