@@ -1,6 +1,9 @@
 #include "legacy_bcu.h"
 #include "libbcu.h"
-#include <string.h>
+#include<stdio.h>
+#include<stdlib.h>
+#include<string.h>
+#include<ctype.h>
 
 //char* test[] = { "1", "test", "argv", "argc", "end" };
 //
