@@ -1,89 +1,9 @@
 #include "legacy_bcu.h"
 #include "libbcu.h"
-#include<stdio.h>
-#include<stdlib.h>
-#include<string.h>
-#include<ctype.h>
-
-//char* test[] = { "1", "test", "argv", "argc", "end" };
-//
-//static int new_argc;
-//static char** new_argv;
-//
-//static int argc;
-//static char** argv;
-//
-//const struct legacy_cmd legacy_command[] = {
-//	{"get_level",	"gpio", convert_cmd_get_level},
-//	{"set_gpio",	"gpio", convert_cmd_set_gpio},
-//	{"set_boot_mode", "bootmode", convert_cmd_set_boot_mode},
-//	{"get_boot_mode", "bootmode", convert_cmd_get_boot_mode},
-//};
-//
-//char* opt_boodmode[] = { "sd", "usb", "emmc" };
-//
-///* "-" -> "--" */
-//int convert_opt_prefix()
-//{
-//
-//}
-//
-//
-//int convert_opt_bootmode()
-//{
-//
-//}
-//
-//int convert_cmd_get_level(void)
-//{
-//
-//
-//	return 0;
-//}
-//
-//int convert_cmd_set_gpio(void)
-//{
-//
-//}
-//
-//int convert_cmd_set_boot_mode(void)
-//{
-//
-//}
-//
-//int convert_cmd_get_boot_mode(void)
-//{
-//
-//}
-//
-//int convert_cmd(void)
-//{
-//	for (int i = 0; i < sizeof(legacy_command) / sizeof(legacy_command[0]); i++) {
-//		if (strcmp(argv[1], legacy_command[i].bcu) == 0) {
-//
-//		}
-//	}
-//
-//}
-//
-//
-//int legacy_to_libbcu(int* pargc, char*** pargv)
-//{
-//	argc = *pargc;
-//	argv = *pargv;
-//
-//	for (int i = 1; i < argc; i++)
-//		printf("%s, ", argv[i]);
-//
-//
-//	new_argc = 6;
-//	*pargc = new_argc;
-//
-//	*pargv = test;
-//
-//	return 0;
-//}
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
 
 
 /*
@@ -145,19 +65,6 @@ int legacy_parse_board_id_options(int argc, char** argv, struct options_setting*
 
 int legacy_parse_options(char* cmd, int argc, char** argv, struct options_setting* setting)
 {
-	//struct board_info* board = NULL;
-	//if (strcmp(cmd, "upgrade") &&
-	//	strcmp(cmd, "uuu") &&
-	//	strcmp(cmd, "lsftdi") &&
-	//	strcmp(cmd, "lsboard") &&
-	//	strcmp(cmd, "version") &&
-	//	strcmp(cmd, "help"))
-	//{
-	//	board = get_board(setting->board);
-	//	if (board == NULL)
-	//		return -1;
-	//}
-
 	for (int i = 2; i < argc; i++)
 	{
 		//printf("parsing %s\n", argv[i]);

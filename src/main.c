@@ -147,28 +147,37 @@ static int monitor_size(int columns_or_rows)
 
 int init(struct options_setting *setting)
 {
-	print_err_str(setting, bcu_init(setting));
+	int ret;
+	ret = bcu_init(setting);
+	print_err_str(setting, ret);
+	return ret;
 }
 
 int deinit(struct options_setting *setting)
 {
-	print_err_str(setting, bcu_deinit(setting));
+	int ret;
+	ret = bcu_deinit(setting);
+	print_err_str(setting, ret);
+	return ret;
 }
 
 int reset(struct options_setting *setting)
 {
+	int ret;
 	int reset_time_ms = bcu_reset_time_ms(setting);
 
 	printf("Board %s will reset in %.1f seconds...\n", setting->board, reset_time_ms / 1000.0);
-	print_err_str(setting, bcu_reset(setting));
+	ret = bcu_reset(setting);
+	print_err_str(setting, ret);
+	return ret;
 }
 
 int onoff(struct options_setting *setting)
 {
-	int ret = 0;
-
+	int ret;
 	ret = bcu_onoff(setting, setting->hold);
 	print_err_str(setting, ret);
+	return ret;
 }
 
 int bootmode(struct options_setting *setting)

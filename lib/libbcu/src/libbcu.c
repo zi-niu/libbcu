@@ -288,7 +288,7 @@ char *bcu_get_err_str(int err_num)
 		       "------>\n";
 	case -LIBBCU_ERR_EEPROM_EMPTY:
 		return "<WARNNING------"
-		       "This board support EEPROM but it is EMPTY.";
+		       "This board support EEPROM but it is EMPTY."
 		       "------>\n";
 	default:
 		return "<ERROR------"

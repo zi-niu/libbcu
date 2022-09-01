@@ -13,12 +13,6 @@ extern "C" {
 #define NO_ID				3
 #define NO_USE_AUTO_FIND	4
 
-struct legacy_cmd {
-	char* bcu_cmd;
-	char* libbcu_cmd;
-	int (*to_libbcu)(void);
-};
-
 int legacy_parse_board_id_options(int argc, char** argv, struct options_setting* setting);
 int legacy_parse_options(char* cmd, int argc, char** argv, struct options_setting* setting);
 
