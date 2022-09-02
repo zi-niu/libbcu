@@ -1180,7 +1180,7 @@ int main(int argc, char **argv)
 	memset(&setting, 0, sizeof(struct options_setting));//initialized to zero
 	set_options_default(&setting);
 
-	//legacy_parse_board_id_options(cmd, argc, argv, &setting);
+	legacy_parse_board_id_options(argc, argv, &setting);
 
 	if (legacy_parse_options(cmd, argc, argv, &setting) == -1) {
 		//return 0;

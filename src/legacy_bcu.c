@@ -40,26 +40,6 @@ int legacy_parse_board_id_options(int argc, char** argv, struct options_setting*
 		}
 	}
 
-	if (strcmp(argv[1], "upgrade") == 0 || strcmp(argv[1], "uuu") == 0 ||
-		strcmp(argv[1], "lsftdi") == 0 || strcmp(argv[1], "lsboard") == 0 ||
-		strcmp(argv[1], "version") == 0 || strcmp(argv[1], "help") == 0)
-	{
-		return 0;
-	}
-
-	if (!setting->auto_find_board)
-	{
-		return NO_USE_AUTO_FIND;
-	}
-	else
-	{
-		if (strlen(setting->board) == 0 && strlen(GV_LOCATION_ID) == 0)
-			return NO_BOARD_AND_ID; //Not provide -board and -id, try auto find board then
-		if (strlen(setting->board) == 0)
-			return NO_BOARD; //Not provide -board
-		if (strlen(GV_LOCATION_ID) == 0)
-			return NO_ID; //Not provide -id
-	}
 	return 0;
 }
 
@@ -264,20 +244,12 @@ int legacy_parse_options(char* cmd, int argc, char** argv, struct options_settin
 		{
 			strcpy(setting->boot_mode_name, input);
 		}
-		else if (strcmp(argv[i], "sd") == 0)
-		{
-		strcpy(setting->boot_mode_name, "sd");
-		}
-		else if (strcmp(argv[i], "usb") == 0)
-		{
-			strcpy(setting->boot_mode_name, "usb");
-		}
-		else if (strcmp(argv[i], "emmc") == 0)
-		{
-			strcpy(setting->boot_mode_name, "emmc");
-		}
 		else
 		{
+			if (bcu_get_bootmode(setting, argv[i])) {
+				printf("could not recognize input %s\n", argv[i]);
+				return -1;
+			}
 			/*if (board == NULL)
 				return -1;
 			int j = 0;

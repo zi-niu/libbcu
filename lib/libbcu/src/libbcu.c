@@ -792,24 +792,7 @@ int bcu_init(struct options_setting *setting)
 					return status;
 			}
 			else {
-				printf("please give boot_mode, assuming 'sd' this time\n");
-				while (board->boot_modes[k].name != NULL)
-				{
-					if (strcmp(board->boot_modes[k].name, "sd") == 0)
-					{
-						setting->boot_mode_hex = board->boot_modes[k].boot_mode_hex;
-						break;
-					}
-					k++;
-				}
-				if (setting->boot_mode_hex != -1)
-					set_boot_mode(setting);
-				else
-				{
-					printf("could not recognize boot mode: sd, please give boot_mode\n");
-					printf("initialization failed\n");
-					return -1;
-				}
+				printf("will boot by BOOT SWITCH\n");
 			}
 
 			initid++;
@@ -2108,16 +2091,16 @@ int bcu_eeprom(struct options_setting *setting, eeprom_informations *eeprom_info
 
 int bcu_check_eeprom_data(struct options_setting *setting)
 {
-	struct board_info* board=get_board(setting->auto_find_board, setting->board);
-	if (board == NULL)
-		return -LIBBCU_ERR_NO_THIS_BOARD;
-	int val = check_board_eeprom(board, 1);
-	if (val == -11)
-		return -LIBBCU_ERR_EEPROM_BREV_MISMATCH;
-	if (val == -22)
-		return -LIBBCU_ERR_EEPROM_BOARD_MISMATCH;
-	if (val < 0 && val != -10)
-		return -LIBBCU_ERR_EEPROM_EMPTY;
+	//struct board_info* board=get_board(setting->auto_find_board, setting->board);
+	//if (board == NULL)
+	//	return -LIBBCU_ERR_NO_THIS_BOARD;
+	//int val = check_board_eeprom(board, 1);
+	//if (val == -11)
+	//	return -LIBBCU_ERR_EEPROM_BREV_MISMATCH;
+	//if (val == -22)
+	//	return -LIBBCU_ERR_EEPROM_BOARD_MISMATCH;
+	//if (val < 0 && val != -10)
+	//	return -LIBBCU_ERR_EEPROM_EMPTY;
 
 	return 0;
 }
@@ -2261,4 +2244,28 @@ int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath)
 	}
 
 	return 0;
+}
+
+int bcu_get_bootmode(struct options_setting* setting, char* bootmode_name)
+{
+	int k = 0;
+	struct board_info* board = get_board(setting->auto_find_board, setting->board);
+	if (board == NULL) 
+		return -LIBBCU_ERR_NO_THIS_BOARD;
+
+	if (board->boot_modes != NULL)
+	{
+		while (board->boot_modes[k].name != NULL)
+		{
+			if (strcmp(board->boot_modes[k].name, bootmode_name) == 0)
+			{
+				//setting->boot_mode_hex = board->boot_modes[k].boot_mode_hex;
+				strcpy(setting->boot_mode_name, bootmode_name);
+				return 0;
+			}
+			k++;
+		}
+	}
+
+	return -LIBBCU_ERR_NO_BOOT_MODE_CFG;
 }

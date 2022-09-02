@@ -250,6 +250,7 @@ int bcu_get_yaml_file_path(char *yamlfilepath);
 int bcu_get_yaml_file(struct options_setting *setting, char *yamlfilepath);
 void bcu_remove_all_ftdi_port(void);
 int bcu_return_rail_name_max_len(struct options_setting *setting);
+int bcu_get_bootmode(struct options_setting* setting, char* bootmode_name);
 
 #ifdef __cplusplus
 }
